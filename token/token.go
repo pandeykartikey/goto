@@ -1,6 +1,6 @@
 package token
 
-type tokenType string
+type TokenType string
 
 type Token struct {
 	Type 	TokenType
@@ -25,8 +25,20 @@ const (
 	DIVIDE = "/"
 	
 	// Delimiters
-
+	SEMI = ";"
 
 	// Keywords
 	VAR = "VAR" 
 )
+
+var keywords = map[string]TokenType {
+	"var" : VAR,
+}
+
+func LookupIdent(ident string) TokenType {
+	if tok, ok := keywords[ident]; ok {
+		return tok
+	}
+
+	return IDENT
+}
