@@ -5,10 +5,10 @@ import (
 )
 
 type Lexer struct {
-	input 		 string
-	position 	 int 
+	input        string
+	position     int
 	readPosition int
-	ch 			 byte
+	ch           byte
 }
 
 func (l *Lexer) readChar() {
@@ -22,13 +22,21 @@ func (l *Lexer) readChar() {
 	l.readPosition += 1
 }
 
+func (l *Lexer) peekChar() byte {
+	if l.readPosition >= len(l.input) {
+		return 0
+	}
+
+	return l.input[l.readPosition]
+}
+
 func (l *Lexer) skipWhitespace() {
 	for l.ch == ' ' || l.ch == '\t' || l.ch == '\n' || l.ch == '\r' {
 		l.readChar()
 	}
 }
 
-func (l *Lexer) readSequence(f func(byte) bool) string { // TODO: merge readIdentifier and readNumber by something like 
+func (l *Lexer) readSequence(f func(byte) bool) string {
 	position := l.position
 
 	for f(l.ch) {
@@ -45,7 +53,13 @@ func (l *Lexer) NextToken() token.Token {
 
 	switch l.ch {
 	case '=':
-		tok = newToken(token.ASSIGN, l.ch)
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.EQ, Literal: string(ch) + string(l.ch)}
+		} else {
+			tok = newToken(token.ASSIGN, l.ch)
+		}
 	case '+':
 		tok = newToken(token.PLUS, l.ch)
 	case '*':
@@ -54,11 +68,36 @@ func (l *Lexer) NextToken() token.Token {
 		tok = newToken(token.DIVIDE, l.ch)
 	case '-':
 		tok = newToken(token.MINUS, l.ch)
+	case '!':
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.NOT_EQ, Literal: string(ch) + string(l.ch)}
+		} else {
+			tok = newToken(token.NOT, l.ch)
+		}
+	case '<':
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.LT_EQ, Literal: string(ch) + string(l.ch)}
+		} else {
+			tok = newToken(token.LT, l.ch)
+		}
+	case '>':
+		if l.peekChar() == '=' {
+			ch := l.ch
+			l.readChar()
+			tok = token.Token{Type: token.GT_EQ, Literal: string(ch) + string(l.ch)}
+		} else {
+			tok = newToken(token.GT, l.ch)
+		}
 	case ';':
 		tok = newToken(token.SEMI, l.ch)
+	case ':':
+		tok = newToken(token.COLON, l.ch)
 	case 0:
-		tok.Literal = ""
-		tok.Type = token.EOF
+		tok = newToken(token.EOF, "")
 	default:
 		if isLetter(l.ch) {
 			tok.Literal = l.readSequence(isLetter)
@@ -78,7 +117,7 @@ func (l *Lexer) NextToken() token.Token {
 }
 
 func newToken(tokenType token.TokenType, ch byte) token.Token {
-	return token.Token{Type: tokenType, Literal:string(ch)}
+	return token.Token{Type: tokenType, Literal: string(ch)}
 }
 
 func isLetter(ch byte) bool {
@@ -86,7 +125,7 @@ func isLetter(ch byte) bool {
 }
 
 func isDigit(ch byte) bool {
-	return '0'<= ch && ch <= '9'
+	return '0' <= ch && ch <= '9'
 }
 
 func New(input string) *Lexer {
