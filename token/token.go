@@ -7,6 +7,12 @@ type Token struct {
 	Literal string
 }
 
+type CommonPrefixTokenPair struct {
+	NextCharacter         byte
+	SingleCharacterType   TokenType
+	MultipleCharacterType TokenType
+}
+
 const (
 	ILLEGAL = "ILLEGAL"
 	EOF     = "EOF"
@@ -34,6 +40,12 @@ const (
 	// Delimiters
 	SEMI  = ";"
 	COLON = ":"
+	COMMA = ","
+
+	LPAREN = "("
+	RPAREN = ")"
+	LBRACE = "{"
+	RBRACE = "}"
 
 	// Keywords
 	VAR    = "VAR"
@@ -45,7 +57,7 @@ const (
 	RETURN = "RETURN"
 )
 
-var keywords = map[string]TokenType{
+var Keywords = map[string]TokenType{
 	"var":    VAR,
 	"func":   FUNC,
 	"true":   TRUE,
@@ -55,10 +67,31 @@ var keywords = map[string]TokenType{
 	"return": RETURN,
 }
 
-func LookupIdent(ident string) TokenType {
-	if tok, ok := keywords[ident]; ok {
+var SingleCharacterToken = map[byte]TokenType{
+	'+': PLUS,
+	'-': MINUS,
+	'*': MULTIPLY,
+	'/': DIVIDE,
+	';': SEMI,
+	':': COLON,
+	',': COMMA,
+	'(': LPAREN,
+	')': RPAREN,
+	'{': LBRACE,
+	'}': RBRACE,
+}
+
+var CommonPrefixToken = map[byte]CommonPrefixTokenPair{
+	'=': {NextCharacter: '=', MultipleCharacterType: EQ, SingleCharacterType: ASSIGN},
+	'!': {NextCharacter: '=', MultipleCharacterType: NOT_EQ, SingleCharacterType: NOT},
+	'<': {NextCharacter: '=', MultipleCharacterType: LT_EQ, SingleCharacterType: LT},
+	'>': {NextCharacter: '=', MultipleCharacterType: GT_EQ, SingleCharacterType: GT},
+}
+
+func LookupGroup(s string, m map[string]TokenType, def TokenType) TokenType { // def default token type
+	if tok, ok := m[s]; ok {
 		return tok
 	}
 
-	return IDENT
+	return def
 }

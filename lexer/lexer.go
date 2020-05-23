@@ -51,57 +51,23 @@ func (l *Lexer) NextToken() token.Token {
 
 	l.skipWhitespace()
 
-	switch l.ch {
-	case '=':
-		if l.peekChar() == '=' {
+	if l.ch == 0 {
+		tok.Type = token.EOF
+		tok.Literal = ""
+	} else if toktype, ok := token.SingleCharacterToken[l.ch]; ok {
+		tok = newToken(toktype, l.ch)
+	} else if commonprefixtok, ok := token.CommonPrefixToken[l.ch]; ok {
+		if l.peekChar() == commonprefixtok.NextCharacter {
 			ch := l.ch
 			l.readChar()
-			tok = token.Token{Type: token.EQ, Literal: string(ch) + string(l.ch)}
+			tok = token.Token{Type: commonprefixtok.MultipleCharacterType, Literal: string(ch) + string(l.ch)}
 		} else {
-			tok = newToken(token.ASSIGN, l.ch)
+			tok = newToken(commonprefixtok.SingleCharacterType, l.ch)
 		}
-	case '+':
-		tok = newToken(token.PLUS, l.ch)
-	case '*':
-		tok = newToken(token.MULTIPLY, l.ch)
-	case '/':
-		tok = newToken(token.DIVIDE, l.ch)
-	case '-':
-		tok = newToken(token.MINUS, l.ch)
-	case '!':
-		if l.peekChar() == '=' {
-			ch := l.ch
-			l.readChar()
-			tok = token.Token{Type: token.NOT_EQ, Literal: string(ch) + string(l.ch)}
-		} else {
-			tok = newToken(token.NOT, l.ch)
-		}
-	case '<':
-		if l.peekChar() == '=' {
-			ch := l.ch
-			l.readChar()
-			tok = token.Token{Type: token.LT_EQ, Literal: string(ch) + string(l.ch)}
-		} else {
-			tok = newToken(token.LT, l.ch)
-		}
-	case '>':
-		if l.peekChar() == '=' {
-			ch := l.ch
-			l.readChar()
-			tok = token.Token{Type: token.GT_EQ, Literal: string(ch) + string(l.ch)}
-		} else {
-			tok = newToken(token.GT, l.ch)
-		}
-	case ';':
-		tok = newToken(token.SEMI, l.ch)
-	case ':':
-		tok = newToken(token.COLON, l.ch)
-	case 0:
-		tok = newToken(token.EOF, "")
-	default:
+	} else {
 		if isLetter(l.ch) {
 			tok.Literal = l.readSequence(isLetter)
-			tok.Type = token.LookupIdent(tok.Literal)
+			tok.Type = token.LookupGroup(tok.Literal, token.Keywords, token.IDENT)
 			return tok
 		} else if isDigit(l.ch) {
 			tok.Literal = l.readSequence(isDigit)
