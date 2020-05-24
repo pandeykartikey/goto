@@ -1,5 +1,5 @@
 - Initialization
-	`var <identifier> = <value>;`
+	`var <identifier> = <expression>;`
 
 - Binary operation
 	`operand1 <op> operand2`
