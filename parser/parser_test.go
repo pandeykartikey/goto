@@ -7,37 +7,6 @@ import (
 	"pyro/lexer"
 )
 
-func TestVarStatements(t *testing.T) {
-	input := `var a = b + 6;
-var bar = 5;
-var foo = 2;`
-
-	l := lexer.New(input)
-	p := New(l)
-
-	program := p.ParseProgram()
-	checkParserErrors(t, p)
-
-	if program == nil {
-		t.Fatalf("Parse Program returned nil")
-	}
-
-	tests := []struct {
-		expectedIdentifier string
-	}{
-		{"a"},
-		{"bar"},
-		{"foo"},
-	}
-
-	for i, tt := range tests {
-		stmt := program.Statements[i]
-		if !testVarStatement(t, stmt, tt.expectedIdentifier) {
-			return
-		}
-	}
-}
-
 func checkParserErrors(t *testing.T, p *Parser) {
 	errors := p.Errors()
 
@@ -75,4 +44,62 @@ func testVarStatement(t *testing.T, s ast.Statement, name string) bool {
 		return false
 	}
 	return true
+}
+
+func TestVarStatements(t *testing.T) {
+	input := `var a = b + 6;
+var bar = 5;
+var foo = 2;`
+
+	l := lexer.New(input)
+	p := New(l)
+
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if program == nil {
+		t.Fatalf("Parse Program returned nil")
+	}
+
+	tests := []struct {
+		expectedIdentifier string
+	}{
+		{"a"},
+		{"bar"},
+		{"foo"},
+	}
+
+	for i, tt := range tests {
+		stmt := program.Statements[i]
+		if !testVarStatement(t, stmt, tt.expectedIdentifier) {
+			return
+		}
+	}
+}
+
+func TestReturnStatements(t *testing.T) {
+	input := `return 5;
+return 10;
+return 993322;`
+
+	l := lexer.New(input)
+	p := New(l)
+
+	program := p.ParseProgram()
+	checkParserErrors(t, p)
+
+	if program == nil {
+		t.Fatalf("Parse Program returned nil")
+	}
+
+	for _, stmt := range program.Statements {
+		returnStmt, ok := stmt.(*ast.ReturnStatement)
+		if !ok {
+			t.Errorf("stmt not *ast.returnStatement. got=%T", stmt)
+			continue
+		}
+		if returnStmt.TokenLiteral() != "return" {
+			t.Errorf("returnStmt.TokenLiteral not 'return', got %q", returnStmt.TokenLiteral())
+		}
+	}
 }

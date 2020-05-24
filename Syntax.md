@@ -15,4 +15,4 @@
 	`}`
 
 - Control Flow
-	`return <identifier>;`
+	`return <expression>;`
