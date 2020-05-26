@@ -2,6 +2,7 @@ package parser
 
 import (
 	"fmt"
+	"strconv"
 
 	"pyro/ast"
 	"pyro/lexer"
@@ -44,6 +45,7 @@ func New(l *lexer.Lexer) *Parser {
 
 	p.prefixParsefns = make(map[token.TokenType]prefixParsefn)
 	p.registerPrefix(token.IDENT, p.parseIdentifier)
+	p.registerPrefix(token.INT, p.parseIdentifier)
 
 	p.setToken() // Only to be called for initialization of Parser pointers
 
@@ -95,6 +97,22 @@ func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParsefn) {
 
 func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParsefn) {
 	p.infixParsefns[tokenType] = fn
+}
+
+func (p *Parser) parseIntegerLiteral() ast.Expression {
+	lit := &ast.IntegerLiteral{Token: p.curToken}
+
+	value, err := strconv.ParseInt(p.curToken.Literal, 0, 64)
+
+	if err != nil {
+		msg := fmt.Sprintf("could not parse %q as integer", p.curToken.Literal)
+		p.errors = append(p.errors, msg)
+		return nil
+	}
+
+	lit.Value = value
+
+	return lit
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
