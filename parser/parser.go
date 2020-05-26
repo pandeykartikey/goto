@@ -8,6 +8,22 @@ import (
 	"pyro/token"
 )
 
+const ( // These represent the operator precedence values.
+	_int = iota
+	LOWEST
+	EQUALS      // ==
+	LESSGREATER // > or <
+	SUM         // +
+	PRODUCT     // *
+	PREFIX      // -X or !X
+	CALL        // myFunction(X)
+)
+
+type (
+	prefixParsefn func() ast.Expression
+	infixParsefn  func(ast.Expression) ast.Expression
+)
+
 type Parser struct {
 	l *lexer.Lexer
 
@@ -15,6 +31,9 @@ type Parser struct {
 	peekToken token.Token
 
 	errors []string
+
+	prefixParsefns map[token.TokenType]prefixParsefn
+	infixParsefns  map[token.TokenType]infixParsefn
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -22,6 +41,9 @@ func New(l *lexer.Lexer) *Parser {
 		l:      l,
 		errors: []string{},
 	}
+
+	p.prefixParsefns = make(map[token.TokenType]prefixParsefn)
+	p.registerPrefix(token.IDENT, p.parseIdentifier)
 
 	p.setToken() // Only to be called for initialization of Parser pointers
 
@@ -67,6 +89,31 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 	return false
 }
 
+func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParsefn) {
+	p.prefixParsefns[tokenType] = fn
+}
+
+func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParsefn) {
+	p.infixParsefns[tokenType] = fn
+}
+
+func (p *Parser) parseIdentifier() ast.Expression {
+	return &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+}
+
+func (p *Parser) parseExpression(precedence int) ast.Expression {
+	prefix := p.prefixParsefns[p.curToken.Type]
+
+	if prefix == nil {
+		return nil
+	}
+
+	leftExp := prefix()
+
+	return leftExp
+
+}
+
 func (p *Parser) parseVarStatement() *ast.VarStatement {
 	stmt := &ast.VarStatement{Token: p.curToken}
 
@@ -102,6 +149,18 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	return stmt
 }
 
+func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+	stmt := &ast.ExpressionStatement{Token: p.curToken}
+
+	stmt.Expression = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(";") {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.curToken.Type {
 	case token.VAR:
@@ -109,7 +168,7 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.RETURN:
 		return p.parseReturnStatement()
 	default:
-		return nil
+		return p.parseExpressionStatement()
 	}
 }
 
