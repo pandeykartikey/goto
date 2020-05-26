@@ -1,7 +1,7 @@
 package ast
 
 import (
-	"bytes"
+	"strings"
 
 	"pyro/token"
 )
@@ -34,7 +34,7 @@ func (p *Program) TokenLiteral() string {
 }
 
 func (p *Program) String() string {
-	var out bytes.Buffer
+	var out strings.Builder
 
 	for _, s := range p.Statements {
 		out.WriteString(s.String())
@@ -86,12 +86,15 @@ func (vs *VarStatement) TokenLiteral() string {
 }
 
 func (vs *VarStatement) String() string {
-	var out bytes.Buffer
+	var out strings.Builder
 
-	out.WriteString(vs.TokenLiteral() + " " + vs.Name.String())
+	out.WriteString(vs.TokenLiteral())
+	out.WriteString(" ")
+	out.WriteString(vs.Name.String())
 
 	if vs.Value != nil {
-		out.WriteString(" = " + vs.Value.String())
+		out.WriteString(" = ")
+		out.WriteString(vs.Value.String())
 	}
 
 	out.WriteString(";")
@@ -111,12 +114,13 @@ func (rs *ReturnStatement) TokenLiteral() string {
 }
 
 func (rs *ReturnStatement) String() string {
-	var out bytes.Buffer
+	var out strings.Builder
 
 	out.WriteString(rs.TokenLiteral())
 
 	if rs.ReturnValue != nil {
-		out.WriteString(" " + rs.ReturnValue.String())
+		out.WriteString(" ")
+		out.WriteString(rs.ReturnValue.String())
 	}
 
 	out.WriteString(";")
@@ -141,4 +145,27 @@ func (es *ExpressionStatement) String() string {
 	}
 
 	return ""
+}
+
+type PrefixExpression struct {
+	Token    token.Token
+	Operator string
+	Right    Expression
+}
+
+func (pe *PrefixExpression) expressionNode() {}
+
+func (pe *PrefixExpression) TokenLiteral() string {
+	return pe.Token.Literal
+}
+
+func (pe *PrefixExpression) String() string {
+	var out strings.Builder
+
+	out.WriteString("(")
+	out.WriteString(pe.Operator)
+	out.WriteString(pe.Right.String())
+	out.WriteString(")")
+
+	return out.String()
 }
