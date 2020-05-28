@@ -67,6 +67,7 @@ func New(l *lexer.Lexer) *Parser {
 		{token.MINUS, p.parsePrefixExpression},
 		{token.TRUE, p.parseBoolean},
 		{token.FALSE, p.parseBoolean},
+		{token.LPAREN, p.parseGroupedExpression},
 	}
 
 	for _, fn := range prefixfns {
@@ -220,6 +221,18 @@ func (p *Parser) parseExpression(precedence int) ast.Expression { // returns exp
 
 	return leftExp
 
+}
+
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	p.nextToken()
+
+	exp := p.parseExpression(LOWEST)
+
+	if p.expectPeek(token.RPAREN) {
+		return exp
+	}
+
+	return nil
 }
 
 func (p *Parser) parseVarStatement() *ast.VarStatement {
