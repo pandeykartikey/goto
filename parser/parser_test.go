@@ -83,12 +83,12 @@ func testIdentifier(t *testing.T, exp ast.Expression, value string) bool {
 		t.Fatalf("exp not *ast.Identifier. got=%T", exp)
 		return false
 	}
-	if ident.Value != "foobar" {
-		t.Errorf("ident.Value not %s. got=%s", "foobar", ident.Value)
+	if ident.Value != value {
+		t.Errorf("ident.Value not %s. got=%s", value, ident.Value)
 		return false
 	}
-	if ident.TokenLiteral() != "foobar" {
-		t.Errorf("ident.TokenLiteral not %s. got=%s", "foobar", ident.TokenLiteral())
+	if ident.TokenLiteral() != value {
+		t.Errorf("ident.TokenLiteral not %s. got=%s", value, ident.TokenLiteral())
 		return false
 	}
 
@@ -242,6 +242,28 @@ func TestParsingPrefixExpression(t *testing.T) {
 	}
 }
 
+func testInfixExpression(t *testing.T, input ast.Expression, leftValue interface{}, operator string, rightValue interface{}) bool {
+	exp, ok := input.(*ast.InfixExpression)
+
+	if !ok {
+		t.Fatalf("exp is not ast.InfixExpression. got=%T", input)
+		return false
+	}
+	if !testLiteralExpression(t, exp.Left, leftValue) {
+		return false
+	}
+	if exp.Operator != operator {
+		t.Fatalf("exp.Operator is not '%s'. got=%s", operator, exp.Operator)
+		return false
+	}
+	if !testLiteralExpression(t, exp.Right, rightValue) {
+		return false
+	}
+
+	return true
+
+}
+
 func TestParsingInfixExpressions(t *testing.T) {
 	infixTests := []struct {
 		input      string
@@ -266,17 +288,7 @@ func TestParsingInfixExpressions(t *testing.T) {
 
 		expstmt := assertExpressionStatement(t, program)
 
-		exp, ok := expstmt.(*ast.InfixExpression)
-		if !ok {
-			t.Fatalf("exp is not ast.InfixExpression. got=%T", expstmt)
-		}
-		if !testLiteralExpression(t, exp.Left, tt.leftValue) {
-			return
-		}
-		if exp.Operator != tt.operator {
-			t.Fatalf("exp.Operator is not '%s'. got=%s", tt.operator, exp.Operator)
-		}
-		if !testLiteralExpression(t, exp.Right, tt.rightValue) {
+		if !testInfixExpression(t, expstmt, tt.leftValue, tt.operator, tt.rightValue) {
 			return
 		}
 	}
@@ -390,6 +402,64 @@ func TestBooleanExpression(t *testing.T) {
 	expstmt := assertExpressionStatement(t, program)
 
 	if testLiteralExpression(t, expstmt, false) {
+		return
+	}
+}
+
+func TestIfStatements(t *testing.T) {
+	input := `if a==b {
+var a = 6;
+} else if b==c {
+	var b = 5;
+} else {
+	var c = 10;
+}`
+
+	program := parseInput(t, input, 1)
+
+	stmt, ok := program.Statements[0].(*ast.IfStatement)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+	}
+
+	if !testInfixExpression(t, stmt.Condition, "a", "==", "b") {
+		return
+	}
+
+	if len(stmt.Consequence.Statements) != 1 {
+		t.Errorf("consequence is not 1 statements. got=%d\n", len(stmt.Consequence.Statements))
+	}
+
+	if !testVarStatement(t, stmt.Consequence.Statements[0], "a") {
+		return
+	}
+
+	if stmt.Alternative != nil {
+		t.Errorf("stmt.Alternative.Statements was not nil. got=%+v", stmt.Alternative)
+	}
+
+	if !testInfixExpression(t, stmt.FollowIf.Condition, "b", "==", "c") {
+		return
+	}
+
+	if len(stmt.FollowIf.Consequence.Statements) != 1 {
+		t.Errorf("consequence is not 1 statements. got=%d\n", len(stmt.FollowIf.Consequence.Statements))
+	}
+
+	if !testVarStatement(t, stmt.FollowIf.Consequence.Statements[0], "b") {
+		return
+	}
+
+	if stmt.FollowIf.FollowIf != nil {
+		return
+	}
+
+	if len(stmt.FollowIf.Alternative.Statements) != 1 {
+		t.Errorf("Alternative is not 1 statements. got=%d\n", len(stmt.FollowIf.Alternative.Statements))
+	}
+
+	if !testVarStatement(t, stmt.FollowIf.Alternative.Statements[0], "c") {
 		return
 	}
 }

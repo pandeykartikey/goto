@@ -211,3 +211,62 @@ func (ie *InfixExpression) String() string {
 
 	return out.String()
 }
+
+type BlockStatement struct {
+	Token      token.Token
+	Statements []Statement
+}
+
+func (bs *BlockStatement) statementNode() {}
+
+func (bs *BlockStatement) TokenLiteral() string {
+	return bs.Token.Literal
+}
+
+func (bs *BlockStatement) String() string {
+	var out strings.Builder
+	out.WriteString("{\n")
+
+	for _, stmt := range bs.Statements {
+		out.WriteString(stmt.String())
+	}
+
+	out.WriteString("}")
+
+	return out.String()
+}
+
+type IfStatement struct {
+	Token       token.Token
+	Condition   Expression
+	Consequence *BlockStatement
+	Alternative *BlockStatement
+	FollowIf    *IfStatement
+}
+
+func (is *IfStatement) statementNode() {}
+
+func (is *IfStatement) TokenLiteral() string {
+	return is.Token.Literal
+}
+
+func (is *IfStatement) String() string {
+	var out strings.Builder
+	out.WriteString(is.TokenLiteral())
+	out.WriteString(" ")
+	out.WriteString(is.Condition.String())
+	out.WriteString(" ")
+	out.WriteString(is.Consequence.String())
+
+	if is.FollowIf != nil {
+		out.WriteString(" else ")
+		out.WriteString(is.FollowIf.String())
+	}
+
+	if is.Alternative != nil {
+		out.WriteString(" else ")
+		out.WriteString(is.Alternative.String())
+	}
+
+	return out.String()
+}

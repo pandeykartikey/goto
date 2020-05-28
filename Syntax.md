@@ -10,7 +10,9 @@
 	`if <boolean expression> {`
 	`...`
 	`}`
-	`else {`
+	`else if <boolean expression> {`
+	`...`
+	`} else {`
 	`...`
 	`}`
 

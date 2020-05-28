@@ -220,7 +220,6 @@ func (p *Parser) parseExpression(precedence int) ast.Expression { // returns exp
 	}
 
 	return leftExp
-
 }
 
 func (p *Parser) parseGroupedExpression() ast.Expression {
@@ -239,19 +238,21 @@ func (p *Parser) parseVarStatement() *ast.VarStatement {
 	stmt := &ast.VarStatement{Token: p.currToken}
 
 	if !p.expectPeek(token.IDENT) {
-		return &ast.VarStatement{}
+		return nil
 	}
 
 	stmt.Name = &ast.Identifier{Token: p.currToken, Value: p.currToken.Literal}
 
 	if !p.expectPeek(token.ASSIGN) {
-		return &ast.VarStatement{}
+		return nil
 	}
 
-	// TODO: Eval expression
+	p.nextToken()
 
-	for !p.currTokenIs(token.SEMI) {
-		p.nextToken()
+	stmt.Value = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.SEMI) {
+		return nil
 	}
 
 	return stmt
@@ -261,10 +262,58 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	stmt := &ast.ReturnStatement{Token: p.currToken}
 
 	p.nextToken()
-	// TODO: Eval expression
 
-	for !p.currTokenIs(token.SEMI) {
+	stmt.ReturnValue = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.SEMI) {
+		return nil
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseBlockStatement() *ast.BlockStatement {
+	block := &ast.BlockStatement{Token: p.currToken}
+	p.nextToken()
+	for !p.currTokenIs(token.RBRACE) && !p.currTokenIs(token.EOF) {
+
+		stmt := p.parseStatement()
+		if stmt != nil {
+			block.Statements = append(block.Statements, stmt)
+		}
 		p.nextToken()
+
+	}
+
+	return block
+}
+
+func (p *Parser) parseIfStatement() *ast.IfStatement {
+	stmt := &ast.IfStatement{Token: p.currToken}
+
+	p.nextToken()
+
+	stmt.Condition = p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	stmt.Consequence = p.parseBlockStatement()
+
+	if !p.peekTokenIs(token.ELSE) {
+		return stmt
+	}
+
+	p.nextToken()
+
+	if p.peekTokenIs(token.IF) {
+		p.nextToken()
+		stmt.FollowIf = p.parseIfStatement()
+	} else if !p.expectPeek(token.LBRACE) {
+		return nil
+	} else {
+		stmt.Alternative = p.parseBlockStatement()
 	}
 
 	return stmt
@@ -288,6 +337,10 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseVarStatement()
 	case token.RETURN:
 		return p.parseReturnStatement()
+	case token.IF:
+		return p.parseIfStatement()
+	case token.LBRACE:
+		return p.parseBlockStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
