@@ -57,10 +57,21 @@ func New(l *lexer.Lexer) *Parser {
 	}
 
 	p.prefixParsefns = make(map[token.TokenType]prefixParsefn)
-	p.registerPrefix(token.IDENT, p.parseIdentifier)
-	p.registerPrefix(token.INT, p.parseIntegerLiteral)
-	p.registerPrefix(token.NOT, p.parsePrefixExpression)
-	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
+	prefixfns := []struct {
+		token   token.TokenType
+		parsefn prefixParsefn
+	}{
+		{token.IDENT, p.parseIdentifier},
+		{token.INT, p.parseIntegerLiteral},
+		{token.NOT, p.parsePrefixExpression},
+		{token.MINUS, p.parsePrefixExpression},
+		{token.TRUE, p.parseBoolean},
+		{token.FALSE, p.parseBoolean},
+	}
+
+	for _, fn := range prefixfns {
+		p.registerPrefix(fn.token, fn.parsefn)
+	}
 
 	p.infixParsefns = make(map[token.TokenType]infixParsefn)
 	for keys := range precedences {
@@ -117,6 +128,10 @@ func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParsefn) {
 
 func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParsefn) {
 	p.infixParsefns[tokenType] = fn
+}
+
+func (p *Parser) parseBoolean() ast.Expression {
+	return &ast.Boolean{Token: p.currToken, Value: p.currTokenIs(token.TRUE)}
 }
 
 func (p *Parser) parseIntegerLiteral() ast.Expression {
@@ -182,7 +197,7 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	return infixexp
 }
 
-func (p *Parser) parseExpression(precedence int) ast.Expression {
+func (p *Parser) parseExpression(precedence int) ast.Expression { // returns expression on the same or higher precedence level
 	prefix := p.prefixParsefns[p.currToken.Type]
 
 	if prefix == nil {
