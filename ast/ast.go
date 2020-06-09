@@ -270,3 +270,57 @@ func (is *IfStatement) String() string {
 
 	return out.String()
 }
+
+type IdentifierList struct {
+	Token       token.Token
+	Identifiers []*Identifier
+}
+
+func (il *IdentifierList) expressionNode() {}
+
+func (il *IdentifierList) TokenLiteral() string {
+	return il.Token.Literal
+}
+
+func (il *IdentifierList) String() string {
+	var out strings.Builder
+
+	out.WriteString("(")
+	for idx, param := range il.Identifiers {
+		if idx > 0 {
+			out.WriteString(",")
+		}
+		out.WriteString(param.String())
+	}
+
+	out.WriteString(")")
+
+	return out.String()
+}
+
+type FuncStatement struct { // TODO: Add return type
+	Token         token.Token
+	Name          *Identifier
+	ParameterList *IdentifierList
+	FuncBody      *BlockStatement
+}
+
+func (fs *FuncStatement) statementNode() {}
+
+func (fs *FuncStatement) TokenLiteral() string {
+	return fs.Token.Literal
+}
+
+func (fs *FuncStatement) String() string {
+	var out strings.Builder
+
+	out.WriteString(fs.TokenLiteral())
+	out.WriteString(" ")
+	out.WriteString(fs.Name.String())
+	out.WriteString(" ")
+	out.WriteString(fs.ParameterList.String())
+	out.WriteString(" ")
+	out.WriteString(fs.FuncBody.String())
+
+	return out.String()
+}

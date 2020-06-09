@@ -319,12 +319,74 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	return stmt
 }
 
+func (p *Parser) parseIdentifierList() *ast.IdentifierList {
+	identlist := &ast.IdentifierList{Token: p.currToken}
+
+	p.nextToken()
+
+	for !p.currTokenIs(token.RPAREN) && !p.currTokenIs(token.EOF) {
+
+		ident, ok := p.parseIdentifier().(*ast.Identifier)
+
+		if !ok {
+			// TODO: Error message
+			return nil
+		}
+
+		if ident != nil {
+			identlist.Identifiers = append(identlist.Identifiers, ident)
+		}
+		if p.peekTokenIs(token.COMMA) {
+			p.nextToken() // TODO: add a utility to do multiple token jumps
+			p.nextToken()
+			continue
+		}
+		if p.peekTokenIs(token.RPAREN) {
+			p.nextToken()
+			break
+		}
+		// TODO: error message
+		return nil
+	}
+
+	return identlist
+}
+
+func (p *Parser) parseFuncStatement() *ast.FuncStatement {
+	stmt := &ast.FuncStatement{Token: p.currToken}
+
+	p.nextToken()
+
+	name, ok := p.parseIdentifier().(*ast.Identifier)
+
+	if !ok {
+		//TODO: Error message
+		return nil
+	}
+
+	stmt.Name = name
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+
+	stmt.ParameterList = p.parseIdentifierList()
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	stmt.FuncBody = p.parseBlockStatement()
+
+	return stmt
+}
+
 func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 	stmt := &ast.ExpressionStatement{Token: p.currToken}
 
 	stmt.Expression = p.parseExpression(LOWEST)
 
-	if p.peekTokenIs(";") {
+	if p.peekTokenIs(token.SEMI) {
 		p.nextToken()
 	}
 
@@ -341,6 +403,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseIfStatement()
 	case token.LBRACE:
 		return p.parseBlockStatement()
+	case token.FUNC:
+		return p.parseFuncStatement()
 	default:
 		return p.parseExpressionStatement()
 	}

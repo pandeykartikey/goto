@@ -18,3 +18,8 @@
 
 - Control Flow
 	`return <expression>;`
+
+- Function Declaration
+	`func <function name> (<parameter list>) {`
+	`...`
+	`}`

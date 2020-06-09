@@ -131,6 +131,24 @@ func testBooleanLiteral(t *testing.T, bl ast.Expression, value bool) bool {
 	return true
 }
 
+func testIdentifierList(t *testing.T, il ast.Expression, value []string) bool {
+	identlist, ok := il.(*ast.IdentifierList)
+
+	if !ok {
+		t.Errorf("il is not *ast.IdentifierList. got=%T", il)
+		return false
+	}
+
+	for idx, ident := range identlist.Identifiers {
+		if ident.Value != value[idx] {
+			t.Errorf("ident.Value is not %s. got=%s", value[idx], ident.Value)
+			return false
+		}
+	}
+
+	return true
+}
+
 func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{}) bool {
 	switch v := expected.(type) {
 	case int:
@@ -420,7 +438,7 @@ var a = 6;
 	stmt, ok := program.Statements[0].(*ast.IfStatement)
 
 	if !ok {
-		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T", program.Statements[0])
+		t.Fatalf("program.Statements[0] is not ast.IfStatement. got=%T", program.Statements[0])
 	}
 
 	if !testInfixExpression(t, stmt.Condition, "a", "==", "b") {
@@ -461,5 +479,44 @@ var a = 6;
 
 	if !testVarStatement(t, stmt.FollowIf.Alternative.Statements[0], "c") {
 		return
+	}
+}
+
+func TestFuncStatement(t *testing.T) {
+	input := `func abc (x, y) {
+		return x;
+	}`
+
+	program := parseInput(t, input, 1)
+
+	stmt, ok := program.Statements[0].(*ast.FuncStatement)
+
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.FuncStatement. got=%T", program.Statements[0])
+	}
+
+	if testIdentifier(t, stmt.Name, "abc") {
+		return
+	}
+
+	if testIdentifierList(t, stmt.ParameterList, []string{"x", "y"}) {
+		return
+	}
+
+	if len(stmt.FuncBody.Statements) != 1 {
+		t.Errorf("FuncBody is not 1 statements. got=%d\n", len(stmt.FuncBody.Statements))
+	}
+
+	returnStmt, ok := stmt.FuncBody.Statements[0].(*ast.ReturnStatement)
+	if !ok {
+		t.Errorf("stmt.FuncBody.Statements[0] not *ast.returnStatement. got=%T", stmt)
+	}
+
+	if returnStmt.TokenLiteral() != "return" {
+		t.Errorf("returnStmt.TokenLiteral not 'return', got %q", returnStmt.TokenLiteral())
+	}
+
+	if returnStmt.ReturnValue != nil {
+		t.Errorf("returnStmt.ReturnValue is nil")
 	}
 }
