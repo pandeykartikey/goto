@@ -31,6 +31,7 @@ var precedences = map[token.TokenType]int{
 	token.MINUS:    PLUS,
 	token.DIVIDE:   MULTIPLY,
 	token.MULTIPLY: MULTIPLY,
+	token.LPAREN:   CALL,
 }
 
 type (
@@ -78,6 +79,8 @@ func New(l *lexer.Lexer) *Parser {
 	for keys := range precedences {
 		p.registerInfix(keys, p.parseInfixExpression)
 	}
+
+	p.registerInfix(token.LPAREN, p.parseCallExpression)
 
 	p.setToken() // Only to be called for initialization of Parser pointers
 
@@ -196,6 +199,42 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 
 	infixexp.Right = p.parseExpression(precedence)
 	return infixexp
+}
+
+func (p *Parser) parseCallArguments() *ast.ExpressionList {
+	args := &ast.ExpressionList{Token: p.currToken}
+
+	p.nextToken()
+
+	for !p.currTokenIs(token.RPAREN) && !p.currTokenIs(token.EOF) {
+		exp := p.parseExpression(LOWEST)
+		args.Expressions = append(args.Expressions, &exp)
+
+		if p.peekTokenIs(token.COMMA) {
+			p.nextToken() // TODO: add a utility to do multiple token jumps
+			p.nextToken()
+			continue
+		}
+		if p.peekTokenIs(token.RPAREN) {
+			p.nextToken()
+			break
+		}
+		// TODO: error message
+		return nil
+	}
+
+	return args
+}
+
+func (p *Parser) parseCallExpression(left ast.Expression) ast.Expression {
+	exp := &ast.CallExpression{Token: p.currToken}
+	fname, ok := left.(*ast.Identifier)
+	if !ok {
+		return nil
+	}
+	exp.FunctionName = fname
+	exp.ArgumentList = p.parseCallArguments()
+	return exp
 }
 
 func (p *Parser) parseExpression(precedence int) ast.Expression { // returns expression on the same or higher precedence level

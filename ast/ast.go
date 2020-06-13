@@ -324,3 +324,51 @@ func (fs *FuncStatement) String() string {
 
 	return out.String()
 }
+
+type ExpressionList struct {
+	Token       token.Token
+	Expressions []*Expression
+}
+
+func (el *ExpressionList) expressionNode() {}
+
+func (el *ExpressionList) TokenLiteral() string {
+	return el.Token.Literal
+}
+
+func (el *ExpressionList) String() string {
+	var out strings.Builder
+
+	out.WriteString("(")
+	for idx, param := range el.Expressions {
+		if idx > 0 {
+			out.WriteString(", ")
+		}
+		out.WriteString((*param).String())
+	}
+
+	out.WriteString(")")
+
+	return out.String()
+}
+
+type CallExpression struct {
+	Token        token.Token
+	FunctionName *Identifier
+	ArgumentList *ExpressionList
+}
+
+func (ce *CallExpression) expressionNode() {}
+
+func (ce *CallExpression) TokenLiteral() string {
+	return ce.Token.Literal
+}
+
+func (ce *CallExpression) String() string {
+	var out strings.Builder
+
+	out.WriteString(ce.FunctionName.String())
+	out.WriteString(ce.ArgumentList.String())
+
+	return out.String()
+}

@@ -23,3 +23,6 @@
 	`func <function name> (<parameter list>) {`
 	`...`
 	`}`
+
+- Function Call
+	`<function name> (<argument list>)`
