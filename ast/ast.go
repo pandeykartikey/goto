@@ -3,7 +3,7 @@ package ast
 import (
 	"strings"
 
-	"pyro/token"
+	"goto/token"
 )
 
 type Node interface {

@@ -3,7 +3,7 @@ package lexer
 import (
 	"testing"
 
-	"pyro/token"
+	"goto/token"
 )
 
 func TestNextToken(t *testing.T) {

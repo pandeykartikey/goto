@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"io"
 
-	"pyro/lexer"
-	"pyro/parser"
+	"goto/lexer"
+	"goto/parser"
 )
 
 const PROMPT = ">> "

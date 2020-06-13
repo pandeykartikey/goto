@@ -3,7 +3,7 @@ package ast
 import (
 	"testing"
 
-	"pyro/token"
+	"goto/token"
 )
 
 func TestString(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"pyro/ast"
-	"pyro/lexer"
+	"goto/ast"
+	"goto/lexer"
 )
 
 func parseInput(t *testing.T, input string, n int) *ast.Program {

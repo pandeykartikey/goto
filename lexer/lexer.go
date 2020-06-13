@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"pyro/token"
+	"goto/token"
 )
 
 type Lexer struct {

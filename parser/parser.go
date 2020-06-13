@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"pyro/ast"
-	"pyro/lexer"
-	"pyro/token"
+	"goto/ast"
+	"goto/lexer"
+	"goto/token"
 )
 
 const ( // These represent the operator precedence values.
