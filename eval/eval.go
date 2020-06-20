@@ -124,9 +124,40 @@ func evalInfixExpression(op string, left object.Object, right object.Object) obj
 	}
 }
 
+func isTrue(obj object.Object) bool {
+	switch obj {
+	case TRUE:
+		return true
+	case FALSE:
+		return false
+	case NULL:
+		return false
+	default:
+		return true
+	}
+}
+
+func evalIfStatement(ifStmt *ast.IfStatement) object.Object {
+	cond := Eval(ifStmt.Condition)
+
+	if isTrue(cond) {
+		return Eval(ifStmt.Consequence)
+	} else if ifStmt.Alternative != nil {
+		return Eval(ifStmt.Alternative)
+	} else if ifStmt.FollowIf != nil {
+		return Eval(ifStmt.FollowIf)
+	}
+
+	return NULL
+}
+
 func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
+		return evalStatements(node.Statements)
+	case *ast.IfStatement:
+		return evalIfStatement(node)
+	case *ast.BlockStatement:
 		return evalStatements(node.Statements)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
