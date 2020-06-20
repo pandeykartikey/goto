@@ -20,7 +20,7 @@ const ( // These represent the operator precedence values.
 	CALL        // myFunction(X)
 )
 
-var precedences = map[token.TokenType]int{
+var precedences = map[token.Type]int{
 	token.EQ:       EQUALS,
 	token.NOT_EQ:   EQUALS,
 	token.LT:       LESSGREATER,
@@ -47,8 +47,8 @@ type Parser struct {
 
 	errors []string
 
-	prefixParsefns map[token.TokenType]prefixParsefn
-	infixParsefns  map[token.TokenType]infixParsefn
+	prefixParsefns map[token.Type]prefixParsefn
+	infixParsefns  map[token.Type]infixParsefn
 }
 
 func New(l *lexer.Lexer) *Parser {
@@ -57,9 +57,9 @@ func New(l *lexer.Lexer) *Parser {
 		errors: []string{},
 	}
 
-	p.prefixParsefns = make(map[token.TokenType]prefixParsefn)
+	p.prefixParsefns = make(map[token.Type]prefixParsefn)
 	prefixfns := []struct {
-		token   token.TokenType
+		token   token.Type
 		parsefn prefixParsefn
 	}{
 		{token.IDENT, p.parseIdentifier},
@@ -75,7 +75,7 @@ func New(l *lexer.Lexer) *Parser {
 		p.registerPrefix(fn.token, fn.parsefn)
 	}
 
-	p.infixParsefns = make(map[token.TokenType]infixParsefn)
+	p.infixParsefns = make(map[token.Type]infixParsefn)
 	for keys := range precedences {
 		p.registerInfix(keys, p.parseInfixExpression)
 	}
@@ -101,21 +101,21 @@ func (p *Parser) setToken() {
 	p.peekToken = p.l.NextToken()
 }
 
-func (p *Parser) currTokenIs(t token.TokenType) bool {
+func (p *Parser) currTokenIs(t token.Type) bool {
 	return p.currToken.Type == t
 }
 
-func (p *Parser) peekTokenIs(t token.TokenType) bool {
+func (p *Parser) peekTokenIs(t token.Type) bool {
 	return p.peekToken.Type == t
 }
 
-func (p *Parser) peekError(t token.TokenType) {
+func (p *Parser) peekError(t token.Type) {
 	msg := fmt.Sprintf("expected next token to be %s , got %s instead", t, p.peekToken.Type)
 	p.errors = append(p.errors, msg)
 
 }
 
-func (p *Parser) expectPeek(t token.TokenType) bool {
+func (p *Parser) expectPeek(t token.Type) bool {
 
 	if p.peekTokenIs(t) {
 		p.nextToken()
@@ -126,12 +126,12 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 	return false
 }
 
-func (p *Parser) registerPrefix(tokenType token.TokenType, fn prefixParsefn) {
-	p.prefixParsefns[tokenType] = fn
+func (p *Parser) registerPrefix(Type token.Type, fn prefixParsefn) {
+	p.prefixParsefns[Type] = fn
 }
 
-func (p *Parser) registerInfix(tokenType token.TokenType, fn infixParsefn) {
-	p.infixParsefns[tokenType] = fn
+func (p *Parser) registerInfix(Type token.Type, fn infixParsefn) {
+	p.infixParsefns[Type] = fn
 }
 
 func (p *Parser) parseBoolean() ast.Expression {
@@ -158,7 +158,7 @@ func (p *Parser) parseIdentifier() ast.Expression {
 	return &ast.Identifier{Token: p.currToken, Value: p.currToken.Literal}
 }
 
-func (p *Parser) noPrefixParseFnError(t token.TokenType) {
+func (p *Parser) noPrefixParseFnError(t token.Type) {
 	msg := fmt.Sprintf("no prefix parse function for %s found", t)
 	p.errors = append(p.errors, msg)
 }

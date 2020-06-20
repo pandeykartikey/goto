@@ -19,7 +19,7 @@ func (l *Lexer) readChar() {
 	}
 
 	l.position = l.readPosition
-	l.readPosition += 1
+	l.readPosition++
 }
 
 func (l *Lexer) peekChar() byte {
@@ -82,8 +82,8 @@ func (l *Lexer) NextToken() token.Token {
 	return tok
 }
 
-func newToken(tokenType token.TokenType, ch byte) token.Token {
-	return token.Token{Type: tokenType, Literal: string(ch)}
+func newToken(Type token.Type, ch byte) token.Token {
+	return token.Token{Type: Type, Literal: string(ch)}
 }
 
 func isLetter(ch byte) bool {

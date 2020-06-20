@@ -1,16 +1,16 @@
 package token
 
-type TokenType string
+type Type string
 
 type Token struct {
-	Type    TokenType
+	Type    Type
 	Literal string
 }
 
 type CommonPrefixTokenPair struct {
 	NextCharacter         byte
-	SingleCharacterType   TokenType
-	MultipleCharacterType TokenType
+	SingleCharacterType   Type
+	MultipleCharacterType Type
 }
 
 const (
@@ -57,7 +57,7 @@ const (
 	RETURN = "RETURN"
 )
 
-var Keywords = map[string]TokenType{
+var Keywords = map[string]Type{
 	"var":    VAR,
 	"func":   FUNC,
 	"true":   TRUE,
@@ -67,7 +67,7 @@ var Keywords = map[string]TokenType{
 	"return": RETURN,
 }
 
-var SingleCharacterToken = map[byte]TokenType{
+var SingleCharacterToken = map[byte]Type{
 	'+': PLUS,
 	'-': MINUS,
 	'*': MULTIPLY,
@@ -88,7 +88,7 @@ var CommonPrefixToken = map[byte]CommonPrefixTokenPair{
 	'>': {NextCharacter: '=', MultipleCharacterType: GT_EQ, SingleCharacterType: GT},
 }
 
-func LookupGroup(s string, m map[string]TokenType, def TokenType) TokenType { // def default token type
+func LookupGroup(s string, m map[string]Type, def Type) Type { // def default token type
 	if tok, ok := m[s]; ok {
 		return tok
 	}

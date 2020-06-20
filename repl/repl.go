@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 
+	"goto/eval"
 	"goto/lexer"
 	"goto/parser"
 )
@@ -32,8 +33,12 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		io.WriteString(out, program.String())
-		io.WriteString(out, "\n")
+		result := eval.Eval(program)
+
+		if result != nil {
+			io.WriteString(out, result.Inspect())
+			io.WriteString(out, "\n")
+		}
 	}
 }
 
