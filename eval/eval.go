@@ -18,11 +18,19 @@ func nativeBoolToBooleanObject(input bool) object.Object {
 	return FALSE
 }
 
-func evalStatements(stmts []ast.Statement) object.Object {
+// to evaluate a block of statements, nested to marked true when inside a nested block
+func evalStatements(stmts []ast.Statement, nested bool) object.Object {
 	var result object.Object
 
 	for _, stmt := range stmts {
 		result = Eval(stmt)
+
+		if retVal, ok := result.(*object.ReturnValue); ok {
+			if !nested {
+				return retVal.Value
+			}
+			return retVal
+		}
 	}
 
 	return result
@@ -124,7 +132,7 @@ func evalInfixExpression(op string, left object.Object, right object.Object) obj
 	}
 }
 
-func isTrue(obj object.Object) bool {
+func isTrue(obj object.Object) bool { // TODO: merge with eval not operator
 	switch obj {
 	case TRUE:
 		return true
@@ -154,11 +162,14 @@ func evalIfStatement(ifStmt *ast.IfStatement) object.Object {
 func Eval(node ast.Node) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
-		return evalStatements(node.Statements)
+		return evalStatements(node.Statements, false)
 	case *ast.IfStatement:
 		return evalIfStatement(node)
 	case *ast.BlockStatement:
-		return evalStatements(node.Statements)
+		return evalStatements(node.Statements, true)
+	case *ast.ReturnStatement:
+		returnValue := Eval(node.ReturnValue)
+		return &object.ReturnValue{Value: returnValue}
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression)
 	case *ast.PrefixExpression:
