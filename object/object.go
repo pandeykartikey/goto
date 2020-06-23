@@ -2,6 +2,8 @@ package object
 
 import (
 	"fmt"
+	"goto/ast"
+	"strings"
 )
 
 type Type string
@@ -12,6 +14,8 @@ const (
 	NULL_OBJ         = "NULL"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
 	ERROR_OBJ        = "ERROR"
+	FUNCTION_OBJ     = "FUNCTION"
+	LIST_OBJ         = "LIST"
 )
 
 type Object interface {
@@ -65,6 +69,49 @@ func (r *ReturnValue) Inspect() string {
 	return r.Value.Inspect()
 }
 
+type Function struct {
+	ParameterList *ast.IdentifierList
+	FuncBody      *ast.BlockStatement
+}
+
+func (f *Function) Type() Type {
+	return FUNCTION_OBJ
+}
+
+func (f *Function) Inspect() string {
+	var out strings.Builder
+
+	out.WriteString(f.ParameterList.String())
+	out.WriteString(" ")
+	out.WriteString(f.FuncBody.String())
+
+	return out.String()
+}
+
+type List struct {
+	Value []*Object
+}
+
+func (l *List) Type() Type {
+	return LIST_OBJ
+}
+
+func (l *List) Inspect() string {
+	var out strings.Builder
+
+	out.WriteString("[")
+	for idx, param := range l.Value {
+		if idx > 0 {
+			out.WriteString(", ")
+		}
+		out.WriteString((*param).Inspect())
+	}
+
+	out.WriteString("]")
+
+	return out.String()
+}
+
 type Error struct {
 	Message string
 }
@@ -79,19 +126,31 @@ func (e *Error) Inspect() string {
 
 type Environment struct {
 	store map[string]Object
+	outer *Environment
 }
 
 func (env *Environment) Get(id string) (Object, bool) {
 	value, ok := env.store[id]
+	if !ok && env.outer != nil {
+		value, ok = env.outer.Get(id)
+	}
 	return value, ok
 }
 
 func (env *Environment) Set(id string, obj Object) Object {
+	// TODO: check for in which env does id exists and then update.
 	env.store[id] = obj
 	return env.store[id]
 }
 
 func NewEnvironment() *Environment {
 	store := make(map[string]Object)
-	return &Environment{store: store}
+	return &Environment{store: store, outer: nil}
+}
+
+func ExtendEnv(outer *Environment) *Environment {
+	env := NewEnvironment()
+	env.outer = outer
+	// TODO: add error for same variable name in the two environments
+	return env
 }

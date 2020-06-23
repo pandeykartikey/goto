@@ -168,6 +168,18 @@ func isTrue(obj object.Object) bool { // TODO: merge with eval not operator
 	}
 }
 
+func evalExpressionList(exprList *ast.ExpressionList, env *object.Environment) object.Object {
+	var objList []*object.Object
+	for _, expr := range exprList.Expressions {
+		obj := Eval(*expr, env)
+		if isError(obj) {
+			return obj
+		}
+		objList = append(objList, &obj)
+	}
+	return &object.List{Value: objList}
+}
+
 func evalIfStatement(ifStmt *ast.IfStatement, env *object.Environment) object.Object {
 	cond := Eval(ifStmt.Condition, env)
 
@@ -182,10 +194,56 @@ func evalIfStatement(ifStmt *ast.IfStatement, env *object.Environment) object.Ob
 	return NULL
 }
 
+func evalFuncStatement(funcStmt *ast.FuncStatement, env *object.Environment) object.Object {
+	funcObj := &object.Function{
+		ParameterList: funcStmt.ParameterList,
+		FuncBody:      funcStmt.FuncBody,
+	}
+
+	env.Set(funcStmt.Name.Value, funcObj)
+
+	return nil
+}
+
+func addArgumentsToEnvironment(fn *object.Function, objList *object.List, env *object.Environment) *object.Environment {
+	extendedEnv := object.ExtendEnv(env)
+
+	for idx, param := range fn.ParameterList.Identifiers {
+		extendedEnv.Set(param.Value, *objList.Value[idx])
+	}
+
+	return extendedEnv
+}
+
+func evalCallExpression(name string, obj object.Object, env *object.Environment) object.Object {
+	args, ok := obj.(*object.List)
+	if !ok {
+		return errorMessageToObject("Unknown Operator: %s", obj.Type())
+	}
+	fn, ok := env.Get(name)
+	if !ok {
+		return errorMessageToObject("Function not found: %s", name)
+	}
+	fnObj, ok := fn.(*object.Function)
+	if !ok {
+		return errorMessageToObject("Function not found: %s", name)
+	}
+	extendedEnv := addArgumentsToEnvironment(fnObj, args, env)
+	return evalStatements(fnObj.FuncBody.Statements, extendedEnv, false)
+}
+
 func Eval(node ast.Node, env *object.Environment) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
 		return evalStatements(node.Statements, env, false)
+	case *ast.FuncStatement:
+		return evalFuncStatement(node, env)
+	case *ast.CallExpression:
+		args := evalExpressionList(node.ArgumentList, env)
+		if isError(args) {
+			return args
+		}
+		return evalCallExpression(node.FunctionName.Value, args, env)
 	case *ast.IfStatement:
 		return evalIfStatement(node, env)
 	case *ast.BlockStatement:
