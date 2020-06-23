@@ -7,6 +7,7 @@ import (
 
 	"goto/eval"
 	"goto/lexer"
+	"goto/object"
 	"goto/parser"
 )
 
@@ -14,6 +15,7 @@ const PROMPT = ">> "
 
 func Start(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
+	env := object.NewEnvironment()
 
 	for {
 		fmt.Printf(PROMPT)
@@ -33,7 +35,7 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		result := eval.Eval(program)
+		result := eval.Eval(program, env)
 
 		if result != nil {
 			io.WriteString(out, result.Inspect())

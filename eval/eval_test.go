@@ -13,8 +13,9 @@ func evalInput(inp string) object.Object {
 	p := parser.New(l)
 
 	program := p.ParseProgram()
+	env := object.NewEnvironment()
 
-	return Eval(program)
+	return Eval(program, env)
 }
 
 func testIntegerObject(t *testing.T, obj object.Object, exp int64) bool {
@@ -160,6 +161,79 @@ func TestReturnStatements(t *testing.T) {
 			}`,
 			10,
 		},
+	}
+	for _, tt := range tests {
+		out := evalInput(tt.input)
+		testIntegerObject(t, out, tt.exp)
+	}
+}
+
+func TestErrorHandling(t *testing.T) {
+	tests := []struct {
+		input string
+		exp   string
+	}{
+		{
+			"5 + true;",
+			"Type Mismatch: INTEGER + BOOLEAN",
+		},
+		{
+			"5 + true; 5;",
+			"Type Mismatch: INTEGER + BOOLEAN",
+		},
+		{
+			"-true",
+			"Unknown Operator: -BOOLEAN",
+		},
+		{
+			"true + false;",
+			"Unknown Operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			"5; true + false; 5",
+			"Unknown Operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			"if (10 > 1) { true + false; }",
+			"Unknown Operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			`if (10>1) {
+						if (10>1) {
+							return true + false;
+							}
+						return 1;
+					}`,
+			"Unknown Operator: BOOLEAN + BOOLEAN",
+		},
+		{
+			"foobar",
+			"Identifier not found: foobar",
+		},
+	}
+
+	for _, tt := range tests {
+		out := evalInput(tt.input)
+		errObj, ok := out.(*object.Error)
+		if !ok {
+			t.Errorf("no error object returned. got=%T", out)
+			continue
+		}
+		if errObj.Message != tt.exp {
+			t.Errorf("wrong error message. expected=%q, got=%q", tt.exp, errObj.Message)
+		}
+	}
+}
+
+func TestLetStatements(t *testing.T) {
+	tests := []struct {
+		input string
+		exp   int64
+	}{
+		{"var a = 5; a;", 5},
+		{"var a = 5 * 5; a;", 25},
+		{"var a = 5; var b = a; b;", 5},
+		{"var a = 5; var b = a; var c = a + b + 5; c;", 15},
 	}
 	for _, tt := range tests {
 		out := evalInput(tt.input)
