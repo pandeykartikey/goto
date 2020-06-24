@@ -112,6 +112,25 @@ func testIntegerLiteral(t *testing.T, il ast.Expression, value int64) bool {
 	return true
 }
 
+func testString(t *testing.T, exp ast.Expression, value string) bool {
+	s, ok := exp.(*ast.String)
+
+	if !ok {
+		t.Fatalf("exp not *ast.String. got=%T", exp)
+		return false
+	}
+	if s.Value != value {
+		t.Errorf("s.Value not %s. got=%s", value, s.Value)
+		return false
+	}
+	if s.TokenLiteral() != value {
+		t.Errorf("s.TokenLiteral not %s. got=%s", value, s.TokenLiteral())
+		return false
+	}
+
+	return true
+}
+
 func testBooleanLiteral(t *testing.T, bl ast.Expression, value bool) bool {
 	boolean, ok := bl.(*ast.Boolean)
 
@@ -158,7 +177,11 @@ func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{
 	case bool:
 		return testBooleanLiteral(t, exp, v)
 	case string:
-		return testIdentifier(t, exp, v)
+		if _, ok := exp.(*ast.Identifier); ok {
+			return testIdentifier(t, exp, v)
+		} else {
+			return testString(t, exp, v)
+		}
 	}
 	t.Errorf("type of exp not handled. got=%T", exp)
 
@@ -562,5 +585,17 @@ func TestCallExpressionParsing(t *testing.T) {
 	testLiteralExpression(t, *args[0], 1)
 	testInfixExpression(t, *args[1], 2, "*", 3)
 	testInfixExpression(t, *args[2], 4, "+", 5)
+
+}
+
+func TestStringExpression(t *testing.T) {
+	input := `"Test String";`
+
+	program := parseInput(t, input, 1)
+	expstmt := assertExpressionStatement(t, program)
+
+	if !testLiteralExpression(t, expstmt, "Test String") {
+		return
+	}
 
 }

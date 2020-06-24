@@ -16,6 +16,7 @@ const (
 	ERROR_OBJ        = "ERROR"
 	FUNCTION_OBJ     = "FUNCTION"
 	LIST_OBJ         = "LIST"
+	STRING_OBJ       = "STRING"
 )
 
 type Object interface {
@@ -55,6 +56,18 @@ func (n *Null) Type() Type {
 
 func (n *Null) Inspect() string {
 	return "null"
+}
+
+type String struct {
+	Value string
+}
+
+func (s *String) Type() Type {
+	return STRING_OBJ
+}
+
+func (s *String) Inspect() string {
+	return s.Value
 }
 
 type ReturnValue struct {

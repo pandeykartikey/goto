@@ -140,6 +140,21 @@ func evalInfixBooleanExpression(op string, left *object.Boolean, right *object.B
 	}
 }
 
+func evalInfixStringExpression(op string, left *object.String, right *object.String) object.Object {
+	leftVal, rightVal := left.Value, right.Value
+
+	switch op {
+	case "+":
+		return &object.String{Value: leftVal + rightVal}
+	case "==":
+		return nativeBoolToBooleanObject(leftVal == rightVal)
+	case "!=":
+		return nativeBoolToBooleanObject(leftVal != rightVal)
+	default:
+		return errorMessageToObject("Unknown Operator: %s %s %s", left.Type(), op, right.Type())
+	}
+}
+
 func evalInfixExpression(op string, left object.Object, right object.Object) object.Object {
 	if left.Type() != right.Type() {
 		return errorMessageToObject("Type Mismatch: %s %s %s", left.Type(), op, right.Type())
@@ -150,6 +165,8 @@ func evalInfixExpression(op string, left object.Object, right object.Object) obj
 		return evalInfixIntegerExpression(op, left.(*object.Integer), right.(*object.Integer))
 	case *object.Boolean:
 		return evalInfixBooleanExpression(op, left.(*object.Boolean), right.(*object.Boolean))
+	case *object.String:
+		return evalInfixStringExpression(op, left.(*object.String), right.(*object.String))
 	default:
 		return errorMessageToObject("Unknown Type %s %s", left.Type(), right.Type())
 	}
@@ -282,6 +299,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalIdentifier(node, env)
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
+	case *ast.String:
+		return &object.String{Value: node.Value}
 	case *ast.Boolean:
 		return nativeBoolToBooleanObject(node.Value)
 	}

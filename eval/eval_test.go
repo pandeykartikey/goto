@@ -99,6 +99,8 @@ func TestEvalBooleanExpression(t *testing.T) {
 		{"1 != 1", false},
 		{"1 == 2", false},
 		{"1 != 2", true},
+		{`"Hello" != "World"`, true},
+		{`"Hello" == "World"`, false},
 	}
 
 	for _, tt := range tests {
@@ -115,6 +117,36 @@ func testNullObject(t *testing.T, obj object.Object) bool {
 	return true
 }
 
+func testStringObject(t *testing.T, obj object.Object, exp string) bool {
+	strObj, ok := obj.(*object.String)
+
+	if !ok {
+		t.Errorf("Expected object type to be String. got=%T", obj)
+		return false
+	}
+
+	if strObj.Value != exp {
+		t.Errorf("Expected %v but got %v instead", exp, strObj.Value)
+		return false
+	}
+
+	return true
+}
+
+func TestEvalStringExpression(t *testing.T) {
+	tests := []struct {
+		input string
+		exp   string
+	}{
+		{`"Hello" + " " + "World"`, "Hello World"},
+		{`var a = "Hello"; a + " World"`, "Hello World"},
+	}
+
+	for _, tt := range tests {
+		out := evalInput(tt.input)
+		testStringObject(t, out, tt.exp)
+	}
+}
 func TestIfElseExpressions(t *testing.T) {
 	tests := []struct {
 		input string
@@ -209,6 +241,10 @@ func TestErrorHandling(t *testing.T) {
 		{
 			"foobar",
 			"Identifier not found: foobar",
+		},
+		{
+			`"Hello" - "World"`,
+			"Unknown Operator: STRING - STRING",
 		},
 	}
 

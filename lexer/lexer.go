@@ -64,6 +64,12 @@ func (l *Lexer) NextToken() token.Token {
 		} else {
 			tok = newToken(commonprefixtok.SingleCharacterType, l.ch)
 		}
+	} else if !isNotQuote(l.ch) {
+		l.readChar()
+		tok.Literal = l.readSequence(isNotQuote)
+		l.readChar()
+		tok.Type = token.STRING
+		return tok
 	} else {
 		if isLetter(l.ch) {
 			tok.Literal = l.readSequence(isLetter)
@@ -92,6 +98,10 @@ func isLetter(ch byte) bool {
 
 func isDigit(ch byte) bool {
 	return '0' <= ch && ch <= '9'
+}
+
+func isNotQuote(ch byte) bool {
+	return ch != '"'
 }
 
 func New(input string) *Lexer {

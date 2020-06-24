@@ -8,8 +8,12 @@ import (
 
 func TestNextToken(t *testing.T) {
 	input := `var a = b + 6;
-if 4>=10:
-	return a-b;`
+				if 4>=10 {
+					return a-b;
+				}
+				"foobar"
+				"foo bar"
+				`
 
 	tests := []struct {
 		expectedType    token.Type
@@ -26,12 +30,15 @@ if 4>=10:
 		{token.INT, "4"},
 		{token.GT_EQ, ">="},
 		{token.INT, "10"},
-		{token.COLON, ":"},
+		{token.LBRACE, "{"},
 		{token.RETURN, "return"},
 		{token.IDENT, "a"},
 		{token.MINUS, "-"},
 		{token.IDENT, "b"},
 		{token.SEMI, ";"},
+		{token.RBRACE, "}"},
+		{token.STRING, "foobar"},
+		{token.STRING, "foo bar"},
 	}
 
 	l := New(input)
