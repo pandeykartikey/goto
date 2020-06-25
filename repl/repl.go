@@ -1,9 +1,9 @@
 package repl
 
 import (
-	"bufio"
 	"fmt"
-	"io"
+
+	"github.com/peterh/liner"
 
 	"goto/eval"
 	"goto/lexer"
@@ -11,41 +11,59 @@ import (
 	"goto/parser"
 )
 
-const PROMPT = ">> "
+const (
+	PS1 = ">> "
+	PS2 = "... "
+)
 
-func Start(in io.Reader, out io.Writer) {
-	scanner := bufio.NewScanner(in)
+func Start() {
+
+	term := liner.NewLiner()
+	defer term.Close()
+
 	env := object.NewEnvironment()
+	code := ""
+	prompt := PS1
 
 	for {
-		fmt.Printf(PROMPT)
-		scanned := scanner.Scan()
 
-		if !scanned {
-			return
+		line, err := term.Prompt(prompt)
+
+		if err != nil {
+			fmt.Println("Aborted")
+			break
 		}
 
-		line := scanner.Text()
-		l := lexer.New(line)
+		code += line
+
+		l := lexer.New(code)
 		p := parser.New(l)
 
 		program := p.ParseProgram()
+
 		if len(p.Errors()) != 0 {
-			printParseErrors(out, p.Errors())
+			if line == "" {
+				printParseErrors(p.Errors())
+			} else {
+				term.AppendHistory(line)
+			}
+			prompt = PS2
 			continue
 		}
 
+		term.AppendHistory(line)
+		code = ""
+		prompt = PS1
 		result := eval.Eval(program, env)
 
 		if result != nil {
-			io.WriteString(out, result.Inspect())
-			io.WriteString(out, "\n")
+			fmt.Println(result.Inspect())
 		}
 	}
 }
 
-func printParseErrors(out io.Writer, errors []string) {
+func printParseErrors(errors []string) {
 	for _, msg := range errors {
-		io.WriteString(out, "\t"+msg+"\n")
+		fmt.Println("\t", msg)
 	}
 }

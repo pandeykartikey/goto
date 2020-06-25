@@ -92,9 +92,18 @@ func (p *Parser) Errors() []string {
 	return p.errors
 }
 
-func (p *Parser) nextToken() {
-	p.currToken = p.peekToken
-	p.peekToken = p.l.NextToken()
+func (p *Parser) nextToken(count ...int64) {
+	n := int64(1)
+	if count != nil {
+		if len(count) != 1 {
+			panic("nextToken takes only one or no parameters")
+		}
+		n = count[0]
+	}
+	for i := int64(0); i < n; i++ {
+		p.currToken = p.peekToken
+		p.peekToken = p.l.NextToken()
+	}
 }
 
 func (p *Parser) setToken() {
@@ -110,10 +119,19 @@ func (p *Parser) peekTokenIs(t token.Type) bool {
 	return p.peekToken.Type == t
 }
 
-func (p *Parser) peekError(t token.Type) {
-	msg := fmt.Sprintf("expected next token to be %s , got %s instead", t, p.peekToken.Type)
+func (p *Parser) tokenError(exp token.Type, t token.Type) {
+	msg := fmt.Sprintf("expected token to be %s , got %s instead", exp, t)
 	p.errors = append(p.errors, msg)
+}
 
+func (p *Parser) expectCurr(t token.Type) bool {
+
+	if p.currTokenIs(t) {
+		return true
+	}
+
+	p.tokenError(t, p.currToken.Type)
+	return false
 }
 
 func (p *Parser) expectPeek(t token.Type) bool {
@@ -123,7 +141,7 @@ func (p *Parser) expectPeek(t token.Type) bool {
 		return true
 	}
 
-	p.peekError(t)
+	p.tokenError(t, p.peekToken.Type)
 	return false
 }
 
@@ -160,6 +178,9 @@ func (p *Parser) parseIntegerLiteral() ast.Expression {
 }
 
 func (p *Parser) parseIdentifier() ast.Expression {
+	if !p.expectCurr(token.IDENT) {
+		return nil
+	}
 	return &ast.Identifier{Token: p.currToken, Value: p.currToken.Literal}
 }
 
@@ -216,15 +237,12 @@ func (p *Parser) parseCallArguments() *ast.ExpressionList {
 		args.Expressions = append(args.Expressions, &exp)
 
 		if p.peekTokenIs(token.COMMA) {
-			p.nextToken() // TODO: add a utility to do multiple token jumps
-			p.nextToken()
+			p.nextToken(2)
 			continue
 		}
-		if p.peekTokenIs(token.RPAREN) {
-			p.nextToken()
+		if p.expectPeek(token.RPAREN) {
 			break
 		}
-		// TODO: error message
 		return nil
 	}
 
@@ -281,11 +299,15 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 func (p *Parser) parseVarStatement() *ast.VarStatement {
 	stmt := &ast.VarStatement{Token: p.currToken}
 
-	if !p.expectPeek(token.IDENT) {
+	p.nextToken()
+
+	name, ok := p.parseIdentifier().(*ast.Identifier)
+
+	if !ok {
 		return nil
 	}
 
-	stmt.Name = &ast.Identifier{Token: p.currToken, Value: p.currToken.Literal}
+	stmt.Name = name
 
 	if !p.expectPeek(token.ASSIGN) {
 		return nil
@@ -327,6 +349,10 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 		}
 		p.nextToken()
 
+	}
+
+	if !p.expectCurr(token.RBRACE) {
+		return nil
 	}
 
 	return block
@@ -373,7 +399,6 @@ func (p *Parser) parseIdentifierList() *ast.IdentifierList {
 		ident, ok := p.parseIdentifier().(*ast.Identifier)
 
 		if !ok {
-			// TODO: Error message
 			return nil
 		}
 
@@ -381,15 +406,16 @@ func (p *Parser) parseIdentifierList() *ast.IdentifierList {
 			identlist.Identifiers = append(identlist.Identifiers, ident)
 		}
 		if p.peekTokenIs(token.COMMA) {
-			p.nextToken() // TODO: add a utility to do multiple token jumps
-			p.nextToken()
+			p.nextToken(2)
 			continue
 		}
-		if p.peekTokenIs(token.RPAREN) {
-			p.nextToken()
+		if p.expectPeek(token.RPAREN) {
 			break
 		}
-		// TODO: error message
+		return nil
+	}
+
+	if p.expectCurr(token.RPAREN) {
 		return nil
 	}
 
@@ -404,7 +430,6 @@ func (p *Parser) parseFuncStatement() *ast.FuncStatement {
 	name, ok := p.parseIdentifier().(*ast.Identifier)
 
 	if !ok {
-		//TODO: Error message
 		return nil
 	}
 
@@ -449,6 +474,9 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseBlockStatement()
 	case token.FUNC:
 		return p.parseFuncStatement()
+	case token.ILLEGAL:
+		p.errors = append(p.errors, "ILLEGAL Token encountered")
+		return nil
 	default:
 		return p.parseExpressionStatement()
 	}

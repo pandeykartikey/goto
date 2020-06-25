@@ -137,7 +137,7 @@ func (e *Error) Inspect() string {
 	return "Error: " + e.Message
 }
 
-type Environment struct {
+type Environment struct { // TODO: separate identifiers from function names. add builtin functions after that.
 	store map[string]Object
 	outer *Environment
 }
