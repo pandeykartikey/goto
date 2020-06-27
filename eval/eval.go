@@ -201,7 +201,7 @@ func evalExpressionList(exprList *ast.ExpressionList, env *object.Environment) o
 	return &object.List{Value: objList}
 }
 
-func evalAssignStatement(assignStmt *ast.AssignStatement, env *object.Environment) object.Object {
+func evalAssignment(assignStmt *ast.Assignment, env *object.Environment) object.Object {
 
 	var (
 		valueList *object.List
@@ -246,6 +246,10 @@ func evalAssignStatement(assignStmt *ast.AssignStatement, env *object.Environmen
 func evalIfStatement(ifStmt *ast.IfStatement, env *object.Environment) object.Object {
 	cond := Eval(ifStmt.Condition, env)
 
+	if isError(cond) {
+		return cond
+	}
+
 	if isTrue(cond) {
 		return Eval(ifStmt.Consequence, env)
 	} else if ifStmt.Alternative != nil {
@@ -255,6 +259,31 @@ func evalIfStatement(ifStmt *ast.IfStatement, env *object.Environment) object.Ob
 	}
 
 	return NULL
+}
+
+func evalForStatement(forStmt *ast.ForStatement, env *object.Environment) object.Object {
+	out := evalAssignment(forStmt.Init, env)
+	if isError(out) {
+		return out
+	}
+	for {
+		cond := Eval(forStmt.Condition, env)
+		if isError(cond) {
+			return cond
+		}
+		if !isTrue(cond) {
+			break
+		}
+		out = Eval(forStmt.ForBody, env)
+		if isError(out) {
+			return out
+		}
+		out = Eval(forStmt.Update, env)
+		if isError(out) {
+			return out
+		}
+	}
+	return nil
 }
 
 func evalFuncStatement(funcStmt *ast.FuncStatement, env *object.Environment) object.Object {
@@ -309,6 +338,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return args
 		}
 		return evalCallExpression(node.FunctionName.Value, args, env)
+	case *ast.ForStatement:
+		return evalForStatement(node, env)
 	case *ast.IfStatement:
 		return evalIfStatement(node, env)
 	case *ast.BlockStatement:
@@ -319,8 +350,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return returnVal
 		}
 		return &object.ReturnValue{Value: returnVal}
-	case *ast.AssignStatement:
-		return evalAssignStatement(node, env)
+	case *ast.Assignment:
+		return evalAssignment(node, env)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression, env)
 	case *ast.PrefixExpression:

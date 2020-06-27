@@ -262,7 +262,7 @@ func TestErrorHandling(t *testing.T) {
 	}
 }
 
-func TestLetStatements(t *testing.T) {
+func TestAssigmentStatements(t *testing.T) {
 	tests := []struct {
 		input string
 		exp   int64
@@ -333,4 +333,14 @@ func TestFunctionCall(t *testing.T) {
 		out := evalInput(tt.input)
 		testIntegerObject(t, out, tt.exp)
 	}
+}
+
+func TestForStatement(t *testing.T) {
+	input := `for var a = 3; a>1; a=a-1 {
+				a = a-2;
+			}
+			a`
+
+	out := evalInput(input)
+	testIntegerObject(t, out, 0)
 }

@@ -59,10 +59,10 @@ func testVarStatement(t *testing.T, s ast.Statement, name string) bool {
 		return false
 	}
 
-	varStmt, ok := s.(*ast.AssignStatement)
+	varStmt, ok := s.(*ast.Assignment)
 
 	if !ok {
-		t.Errorf("s not *ast.AssignStatement. got=%T", s)
+		t.Errorf("s not *ast.Assignment. got=%T", s)
 		return false
 	}
 	if varStmt.NameList.Identifiers[0].Value != name {
@@ -187,7 +187,7 @@ func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{
 	return false
 }
 
-func TestAssignStatements(t *testing.T) {
+func TestAssignments(t *testing.T) {
 	tests := []struct {
 		input             string
 		expTokenLiteral   string
@@ -222,9 +222,9 @@ func TestAssignStatements(t *testing.T) {
 
 	for _, tt := range tests {
 		program := parseInput(t, tt.input, 1)
-		stmt, ok := program.Statements[0].(*ast.AssignStatement)
+		stmt, ok := program.Statements[0].(*ast.Assignment)
 		if !ok {
-			t.Errorf("s not *ast.AssignStatement. got=%T", stmt)
+			t.Errorf("s not *ast.Assignment. got=%T", stmt)
 			continue
 		}
 		if stmt.TokenLiteral() != tt.expTokenLiteral {
@@ -629,4 +629,32 @@ func TestStringExpression(t *testing.T) {
 		return
 	}
 
+}
+
+func TestForStatement(t *testing.T) {
+	input := `for var a = 3; a>1; a=a+1 {
+		a+1;
+	}
+	`
+	program := parseInput(t, input, 1)
+	stmt, ok := program.Statements[0].(*ast.ForStatement)
+	if !ok {
+		t.Fatalf("stmt is not ast.ForStatement. got=%T", program.Statements[0])
+	}
+	if !testVarStatement(t, stmt.Init, "a") {
+		return
+	}
+	if !testInfixExpression(t, stmt.Condition, "a", ">", 1) {
+		return
+	}
+	if !testInfixExpression(t, *stmt.Update.ValueList.Expressions[0], "a", "+", 1) {
+		return
+	}
+	body, ok := stmt.ForBody.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("stmt.ForBody.Statements[0] is not ast.ExpressionStatement. got=%T", stmt.ForBody.Statements[0])
+	}
+	if !testInfixExpression(t, body.Expression, "a", "+", 1) {
+		return
+	}
 }

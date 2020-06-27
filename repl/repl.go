@@ -44,10 +44,12 @@ func Start() {
 		if len(p.Errors()) != 0 {
 			if line == "" {
 				printParseErrors(p.Errors())
+				code = ""
+				prompt = PS1
 			} else {
 				term.AppendHistory(line)
+				prompt = PS2
 			}
-			prompt = PS2
 			continue
 		}
 
@@ -64,6 +66,6 @@ func Start() {
 
 func printParseErrors(errors []string) {
 	for _, msg := range errors {
-		fmt.Println("\t", msg)
+		fmt.Println("Error: ", msg)
 	}
 }

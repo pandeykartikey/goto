@@ -303,41 +303,42 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 	return nil
 }
 
-func (p *Parser) parseAssignStatement() *ast.AssignStatement {
-	stmt := &ast.AssignStatement{}
+// isExpression is used to maintain difference between Assignment statement and expression
+func (p *Parser) parseAssignment(isExpression bool) *ast.Assignment {
+	assign := &ast.Assignment{IsExpression: isExpression}
 
 	if p.currTokenIs(token.VAR) {
-		stmt.Token = p.currToken
+		assign.Token = p.currToken
 		p.nextToken()
 	}
 
-	stmt.NameList = p.parseIdentifierList()
+	assign.NameList = p.parseIdentifierList()
 
-	if stmt.Token.Type == token.VAR && p.currTokenIs(token.SEMI) {
-		return stmt
+	if assign.Token.Type == token.VAR && !isExpression && p.currTokenIs(token.SEMI) {
+		return assign
 	}
 
 	if !p.expectCurr(token.ASSIGN) {
 		return nil
 	}
 
-	if stmt.Token.Type != token.VAR {
-		stmt.Token = p.currToken
+	if assign.Token.Type != token.VAR {
+		assign.Token = p.currToken
 	}
 
 	p.nextToken()
 
-	stmt.ValueList = p.parseExpressionList()
+	assign.ValueList = p.parseExpressionList()
 
-	if len(stmt.ValueList.Expressions) != len(stmt.NameList.Identifiers) {
+	if len(assign.ValueList.Expressions) != len(assign.NameList.Identifiers) {
 		p.errors = append(p.errors, "Mismatch in number of values on both side of =")
 	}
 
-	if !p.expectCurr(token.SEMI) {
+	if !isExpression && !p.expectCurr(token.SEMI) {
 		return nil
 	}
 
-	return stmt
+	return assign
 }
 
 func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
@@ -401,6 +402,42 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	} else {
 		stmt.Alternative = p.parseBlockStatement()
 	}
+
+	return stmt
+}
+
+func (p *Parser) parseForStatement() *ast.ForStatement {
+	stmt := &ast.ForStatement{Token: p.currToken}
+
+	p.nextToken()
+
+	if !p.currTokenIs(token.SEMI) {
+		stmt.Init = p.parseAssignment(true)
+	}
+
+	if !p.expectCurr(token.SEMI) {
+		return nil
+	}
+	p.nextToken()
+
+	if !p.currTokenIs(token.SEMI) {
+		stmt.Condition = p.parseExpression(LOWEST)
+	}
+
+	if !p.expectPeek(token.SEMI) {
+		return nil
+	}
+
+	p.nextToken()
+	if !p.currTokenIs(token.LBRACE) {
+		stmt.Update = p.parseAssignment(true)
+	}
+
+	if !p.expectCurr(token.LBRACE) {
+		return nil
+	}
+
+	stmt.ForBody = p.parseBlockStatement()
 
 	return stmt
 }
@@ -484,7 +521,7 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.currToken.Type {
 	case token.VAR:
-		return p.parseAssignStatement()
+		return p.parseAssignment(false)
 	case token.RETURN:
 		return p.parseReturnStatement()
 	case token.IF:
@@ -493,12 +530,14 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseBlockStatement()
 	case token.FUNC:
 		return p.parseFuncStatement()
+	case token.FOR:
+		return p.parseForStatement()
 	case token.ILLEGAL:
 		p.errors = append(p.errors, "ILLEGAL Token encountered")
 		return nil
 	case token.IDENT:
 		if p.peekTokenIs(token.COMMA) || p.peekTokenIs(token.ASSIGN) {
-			return p.parseAssignStatement()
+			return p.parseAssignment(false)
 		}
 		fallthrough
 	default:

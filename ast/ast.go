@@ -103,19 +103,22 @@ func (i *Identifier) String() string {
 	return i.Value
 }
 
-type AssignStatement struct {
-	Token     token.Token
-	NameList  *IdentifierList
-	ValueList *ExpressionList
+type Assignment struct {
+	Token        token.Token
+	NameList     *IdentifierList
+	ValueList    *ExpressionList
+	IsExpression bool // to check whether it acting as expression or statement
 }
 
-func (as *AssignStatement) statementNode() {}
+func (as *Assignment) statementNode() {}
 
-func (as *AssignStatement) TokenLiteral() string {
+func (as *Assignment) expressionNode() {}
+
+func (as *Assignment) TokenLiteral() string {
 	return as.Token.Literal
 }
 
-func (as *AssignStatement) String() string {
+func (as *Assignment) String() string {
 	var out strings.Builder
 	if as.Token.Literal == "var" {
 		out.WriteString("var ")
@@ -127,8 +130,9 @@ func (as *AssignStatement) String() string {
 		out.WriteString(" = ")
 		out.WriteString(as.ValueList.String())
 	}
-
-	out.WriteString(";")
+	if !as.IsExpression {
+		out.WriteString(";")
+	}
 
 	return out.String()
 }
@@ -382,6 +386,36 @@ func (ce *CallExpression) String() string {
 
 	out.WriteString(ce.FunctionName.String())
 	out.WriteString(ce.ArgumentList.String())
+
+	return out.String()
+}
+
+type ForStatement struct {
+	Token     token.Token
+	Init      *Assignment
+	Condition Expression
+	Update    *Assignment
+	ForBody   *BlockStatement
+}
+
+func (fs *ForStatement) statementNode() {}
+
+func (fs *ForStatement) TokenLiteral() string {
+	return fs.Token.Literal
+}
+
+func (fs *ForStatement) String() string {
+	var out strings.Builder
+
+	out.WriteString(fs.TokenLiteral())
+	out.WriteString(" ")
+	out.WriteString(fs.Init.String())
+	out.WriteString(";")
+	out.WriteString(fs.Condition.String())
+	out.WriteString(";")
+	out.WriteString(fs.Update.String())
+	out.WriteString(" ")
+	out.WriteString(fs.ForBody.String())
 
 	return out.String()
 }
