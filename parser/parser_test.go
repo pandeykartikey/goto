@@ -256,6 +256,27 @@ return 993322;`
 	}
 }
 
+func TestLoopControlStatements(t *testing.T) {
+	tests := []struct {
+		input string
+		exp   string
+	}{
+		{"break;", "break"},
+		{"continue;", "continue"},
+	}
+
+	for _, tt := range tests {
+		program := parseInput(t, tt.input, 1)
+		loopStmt, ok := program.Statements[0].(*ast.LoopControlStatement)
+		if !ok {
+			t.Errorf("stmt not *ast.LoopControlStatement. got=%T", loopStmt)
+			continue
+		}
+		if loopStmt.TokenLiteral() != tt.exp {
+			t.Errorf("loopStmt.TokenLiteral not '%s', got %s", tt.exp, loopStmt.TokenLiteral())
+		}
+	}
+}
 func TestIdentifierStatement(t *testing.T) {
 	input := `foobar;`
 

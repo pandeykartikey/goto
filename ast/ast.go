@@ -305,11 +305,14 @@ func (il *IdentifierList) TokenLiteral() string {
 func (il *IdentifierList) String() string {
 	var out strings.Builder
 
-	for idx, param := range il.Identifiers {
-		if idx > 0 {
-			out.WriteString(",")
+	if il != nil {
+
+		for idx, param := range il.Identifiers {
+			if idx > 0 {
+				out.WriteString(",")
+			}
+			out.WriteString(param.String())
 		}
-		out.WriteString(param.String())
 	}
 
 	return out.String()
@@ -357,13 +360,14 @@ func (el *ExpressionList) String() string {
 	var out strings.Builder
 
 	out.WriteString("(")
-	for idx, param := range el.Expressions {
-		if idx > 0 {
-			out.WriteString(", ")
+	if el != nil {
+		for idx, param := range el.Expressions {
+			if idx > 0 {
+				out.WriteString(", ")
+			}
+			out.WriteString((*param).String())
 		}
-		out.WriteString((*param).String())
 	}
-
 	out.WriteString(")")
 
 	return out.String()
@@ -418,4 +422,19 @@ func (fs *ForStatement) String() string {
 	out.WriteString(fs.ForBody.String())
 
 	return out.String()
+}
+
+type LoopControlStatement struct {
+	Token token.Token
+	Value string
+}
+
+func (lc *LoopControlStatement) statementNode() {}
+
+func (lc *LoopControlStatement) TokenLiteral() string {
+	return lc.Token.Literal
+}
+
+func (lc *LoopControlStatement) String() string {
+	return lc.Token.Literal + ";"
 }

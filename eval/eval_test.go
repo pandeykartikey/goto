@@ -157,6 +157,7 @@ func TestIfElseExpressions(t *testing.T) {
 		{"if (false) { 10 }", nil},
 		{"if (1) { 10 }", 10},
 		{"if (1 < 2) { 10 }", 10},
+		{"if (1 < 2) { if ( 1 < 2 ) { 10; } else { 11;} }", 10},
 		{"if (1 > 2) { 10 }", nil},
 		{"if (1 > 2) { 10 } else { 20 }", 20},
 		{"if (1 < 2) { 10 } else { 20 }", 10},
@@ -181,17 +182,17 @@ func TestReturnStatements(t *testing.T) {
 		input string
 		exp   int64
 	}{
-		{"return 10;", 10},
-		{"return 10; 9;", 10},
-		{"return 2 * 5; 9;", 10},
-		{"9; return 2 * 5; 9;", 10},
+		// {"func asd() { return 10; }; asd();", 10},
 		{
-			`if (10>1) {
+			` func asd () { 
 				if (10>1) {
-					return 10;
+					if (10>1) {
+						return 10;
 					}
-				return 1;
-			}`,
+					return 1;
+				}
+			}
+			asd();`,
 			10,
 		},
 	}
@@ -313,7 +314,7 @@ func TestFunctionCall(t *testing.T) {
 			5,
 		},
 		{
-			"func identity(x) { return x; }; identity(5);",
+			"func identity() { return 5; }; identity();",
 			5,
 		},
 		{
@@ -336,11 +337,30 @@ func TestFunctionCall(t *testing.T) {
 }
 
 func TestForStatement(t *testing.T) {
-	input := `for var a = 3; a>1; a=a-1 {
-				a = a-2;
+	tests := []struct {
+		input string
+		exp   int64
+	}{
+		{`for var a = 0; a<10; a=a+1 {
+				a = a+2;
+				if a>5 {
+					break;
+				}
 			}
-			a`
+			a;`, 8,
+		},
+		{`for var a = 0; a<10; a=a+1 {
+			if a>5 {
+				continue;
+			}
+			a = a+5;
+		}
+		a`, 10,
+		},
+	}
 
-	out := evalInput(input)
-	testIntegerObject(t, out, 0)
+	for _, tt := range tests {
+		out := evalInput(tt.input)
+		testIntegerObject(t, out, tt.exp)
+	}
 }

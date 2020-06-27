@@ -13,6 +13,7 @@ const (
 	BOOLEAN_OBJ      = "BOOLEAN"
 	NULL_OBJ         = "NULL"
 	RETURN_VALUE_OBJ = "RETURN_VALUE"
+	LOOP_CONTROL_OBJ = "LOOP_CONTROL"
 	ERROR_OBJ        = "ERROR"
 	FUNCTION_OBJ     = "FUNCTION"
 	LIST_OBJ         = "LIST"
@@ -80,6 +81,18 @@ func (r *ReturnValue) Type() Type {
 
 func (r *ReturnValue) Inspect() string {
 	return r.Value.Inspect()
+}
+
+type LoopControl struct {
+	Value string
+}
+
+func (l *LoopControl) Type() Type {
+	return LOOP_CONTROL_OBJ
+}
+
+func (l *LoopControl) Inspect() string {
+	return l.Value
 }
 
 type Function struct {

@@ -232,7 +232,7 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 func (p *Parser) parseExpressionList() *ast.ExpressionList {
 	args := &ast.ExpressionList{Token: p.currToken}
 
-	for !p.currTokenIs(token.EOF) {
+	for !p.currTokenIs(token.EOF) && !p.currTokenIs(token.RPAREN) {
 		exp := p.parseExpression(LOWEST)
 		args.Expressions = append(args.Expressions, &exp)
 
@@ -245,7 +245,6 @@ func (p *Parser) parseExpressionList() *ast.ExpressionList {
 		return args
 	}
 
-	p.errors = append(p.errors, "End Of File encountered while parsing")
 	return nil
 }
 
@@ -355,6 +354,16 @@ func (p *Parser) parseReturnStatement() *ast.ReturnStatement {
 	return stmt
 }
 
+func (p *Parser) parseLoopControlStatement() *ast.LoopControlStatement {
+	stmt := &ast.LoopControlStatement{Token: p.currToken, Value: p.currToken.Literal}
+
+	if !p.expectPeek(token.SEMI) {
+		return nil
+	}
+
+	return stmt
+}
+
 func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	block := &ast.BlockStatement{Token: p.currToken}
 	p.nextToken()
@@ -446,7 +455,7 @@ func (p *Parser) parseForStatement() *ast.ForStatement {
 func (p *Parser) parseIdentifierList() *ast.IdentifierList {
 	identlist := &ast.IdentifierList{Token: p.currToken}
 
-	for !p.currTokenIs(token.EOF) {
+	for !p.currTokenIs(token.EOF) && p.currTokenIs(token.IDENT) {
 
 		ident, ok := p.parseIdentifier().(*ast.Identifier)
 
@@ -467,7 +476,9 @@ func (p *Parser) parseIdentifierList() *ast.IdentifierList {
 		return identlist
 	}
 
-	p.errors = append(p.errors, "End Of File encountered while parsing")
+	if p.currTokenIs(token.EOF) {
+		p.errors = append(p.errors, "End Of File encountered while parsing")
+	}
 
 	return nil
 }
@@ -524,6 +535,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseAssignment(false)
 	case token.RETURN:
 		return p.parseReturnStatement()
+	case token.BREAK, token.CONTINUE:
+		return p.parseLoopControlStatement()
 	case token.IF:
 		return p.parseIfStatement()
 	case token.LBRACE:

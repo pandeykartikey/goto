@@ -34,19 +34,20 @@ func errorMessageToObject(msg string, a ...interface{}) *object.Error {
 }
 
 // to evaluate a block of statements, nested to marked true when inside a nested block
-func evalStatements(stmts []ast.Statement, env *object.Environment, nested bool) object.Object {
+func evalStatements(stmts []ast.Statement, env *object.Environment, insideFunc bool) object.Object {
 	var result object.Object
 
 	for _, stmt := range stmts {
-		result = Eval(stmt, env)
+
+		result = evalProgram(stmt, env)
 
 		switch result.(type) {
 		case *object.ReturnValue:
-			if !nested {
+			if insideFunc {
 				return result.(*object.ReturnValue).Value
 			}
 			return result
-		case *object.Error:
+		case *object.Error, *object.LoopControl:
 			return result
 		}
 	}
@@ -63,18 +64,8 @@ func evalIdentifier(id *ast.Identifier, env *object.Environment) object.Object {
 	return val
 }
 
-// NULL is false and all other values are true
 func evalNotOperator(obj object.Object) object.Object {
-	switch obj {
-	case TRUE:
-		return FALSE
-	case FALSE:
-		return TRUE
-	case NULL:
-		return TRUE
-	default:
-		return FALSE
-	}
+	return nativeBoolToBooleanObject(!isTrue(obj))
 }
 
 // - Operator can only apply on integer value
@@ -176,7 +167,8 @@ func evalInfixExpression(op string, left object.Object, right object.Object) obj
 	}
 }
 
-func isTrue(obj object.Object) bool { // TODO: merge with eval not operator
+// NULL is false and all other values are true
+func isTrue(obj object.Object) bool {
 	switch obj {
 	case TRUE:
 		return true
@@ -191,13 +183,19 @@ func isTrue(obj object.Object) bool { // TODO: merge with eval not operator
 
 func evalExpressionList(exprList *ast.ExpressionList, env *object.Environment) object.Object {
 	var objList []*object.Object
+
+	if exprList == nil {
+		return &object.List{Value: objList}
+	}
+
 	for _, expr := range exprList.Expressions {
-		obj := Eval(*expr, env)
+		obj := evalProgram(*expr, env)
 		if isError(obj) {
 			return obj
 		}
 		objList = append(objList, &obj)
 	}
+
 	return &object.List{Value: objList}
 }
 
@@ -244,18 +242,18 @@ func evalAssignment(assignStmt *ast.Assignment, env *object.Environment) object.
 }
 
 func evalIfStatement(ifStmt *ast.IfStatement, env *object.Environment) object.Object {
-	cond := Eval(ifStmt.Condition, env)
+	cond := evalProgram(ifStmt.Condition, env)
 
 	if isError(cond) {
 		return cond
 	}
 
 	if isTrue(cond) {
-		return Eval(ifStmt.Consequence, env)
+		return evalProgram(ifStmt.Consequence, env)
 	} else if ifStmt.Alternative != nil {
-		return Eval(ifStmt.Alternative, env)
+		return evalProgram(ifStmt.Alternative, env)
 	} else if ifStmt.FollowIf != nil {
-		return Eval(ifStmt.FollowIf, env)
+		return evalProgram(ifStmt.FollowIf, env)
 	}
 
 	return NULL
@@ -266,23 +264,34 @@ func evalForStatement(forStmt *ast.ForStatement, env *object.Environment) object
 	if isError(out) {
 		return out
 	}
+forLoop:
 	for {
-		cond := Eval(forStmt.Condition, env)
+
+		cond := evalProgram(forStmt.Condition, env)
 		if isError(cond) {
 			return cond
 		}
 		if !isTrue(cond) {
 			break
 		}
-		out = Eval(forStmt.ForBody, env)
-		if isError(out) {
+
+		out = evalStatements(forStmt.ForBody.Statements, env, false)
+
+		switch out.(type) {
+		case *object.LoopControl:
+			if out.Inspect() == "break" {
+				break forLoop
+			}
+		case *object.Error, *object.ReturnValue:
 			return out
 		}
-		out = Eval(forStmt.Update, env)
+
+		out = evalProgram(forStmt.Update, env)
 		if isError(out) {
 			return out
 		}
 	}
+
 	return nil
 }
 
@@ -302,6 +311,10 @@ func evalFuncStatement(funcStmt *ast.FuncStatement, env *object.Environment) obj
 func addArgumentsToEnvironment(fn *object.Function, objList *object.List, env *object.Environment) *object.Environment {
 	extendedEnv := object.ExtendEnv(env)
 
+	if fn.ParameterList == nil {
+		return extendedEnv
+	}
+
 	for idx, param := range fn.ParameterList.Identifiers {
 		extendedEnv.Create(param.Value, *objList.Value[idx])
 	}
@@ -314,19 +327,23 @@ func evalCallExpression(name string, obj object.Object, env *object.Environment)
 	if !ok {
 		return errorMessageToObject("Unknown Operator: %s", obj.Type())
 	}
+
 	fn, ok := env.Get(name)
 	if !ok {
 		return errorMessageToObject("Function not found: %s", name)
 	}
+
 	fnObj, ok := fn.(*object.Function)
 	if !ok {
 		return errorMessageToObject("Function not found: %s", name)
 	}
+
 	extendedEnv := addArgumentsToEnvironment(fnObj, args, env)
-	return evalStatements(fnObj.FuncBody.Statements, extendedEnv, false)
+
+	return evalStatements(fnObj.FuncBody.Statements, extendedEnv, true)
 }
 
-func Eval(node ast.Node, env *object.Environment) object.Object {
+func evalProgram(node ast.Node, env *object.Environment) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
 		return evalStatements(node.Statements, env, false)
@@ -343,29 +360,31 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.IfStatement:
 		return evalIfStatement(node, env)
 	case *ast.BlockStatement:
-		return evalStatements(node.Statements, env, true)
+		return evalStatements(node.Statements, env, false)
 	case *ast.ReturnStatement:
-		returnVal := Eval(node.ReturnValue, env)
+		returnVal := evalProgram(node.ReturnValue, env)
 		if isError(returnVal) {
 			return returnVal
 		}
 		return &object.ReturnValue{Value: returnVal}
+	case *ast.LoopControlStatement:
+		return &object.LoopControl{Value: node.TokenLiteral()}
 	case *ast.Assignment:
 		return evalAssignment(node, env)
 	case *ast.ExpressionStatement:
-		return Eval(node.Expression, env)
+		return evalProgram(node.Expression, env)
 	case *ast.PrefixExpression:
-		right := Eval(node.Right, env)
+		right := evalProgram(node.Right, env)
 		if isError(right) {
 			return right
 		}
 		return evalPrefixExpression(node.Operator, right)
 	case *ast.InfixExpression:
-		right := Eval(node.Right, env)
+		right := evalProgram(node.Right, env)
 		if isError(right) {
 			return right
 		}
-		left := Eval(node.Left, env)
+		left := evalProgram(node.Left, env)
 		if isError(left) {
 			return left
 		}
@@ -381,4 +400,16 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	}
 
 	return nil
+}
+
+func Eval(node ast.Node, env *object.Environment) object.Object {
+	out := evalProgram(node, env)
+	switch out.(type) {
+	case *object.ReturnValue:
+		return errorMessageToObject("return used outside function")
+	case *object.LoopControl:
+		return errorMessageToObject("break or continue used outside for loop")
+	default:
+		return out
+	}
 }
