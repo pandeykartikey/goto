@@ -30,6 +30,7 @@ const (
 	MINUS    = "-"
 	MULTIPLY = "*"
 	DIVIDE   = "/"
+	MOD      = "%"
 	EQ       = "=="
 	NOT      = "!"
 	NOT_EQ   = "!="
@@ -50,23 +51,29 @@ const (
 	RBRACE = "}"
 
 	// Keywords
-	VAR    = "VAR"
-	FUNC   = "FUNC"
-	TRUE   = "TRUE"
-	FALSE  = "FALSE"
-	IF     = "IF"
-	ELSE   = "ELSE"
-	RETURN = "RETURN"
+	VAR      = "VAR"
+	FUNC     = "FUNC"
+	TRUE     = "TRUE"
+	FALSE    = "FALSE"
+	IF       = "IF"
+	ELSE     = "ELSE"
+	RETURN   = "RETURN"
+	FOR      = "FOR"
+	CONTINUE = "CONTINUE"
+	BREAK    = "BREAK"
 )
 
 var Keywords = map[string]Type{
-	"var":    VAR,
-	"func":   FUNC,
-	"true":   TRUE,
-	"false":  FALSE,
-	"if":     IF,
-	"else":   ELSE,
-	"return": RETURN,
+	"var":      VAR,
+	"func":     FUNC,
+	"true":     TRUE,
+	"false":    FALSE,
+	"if":       IF,
+	"else":     ELSE,
+	"return":   RETURN,
+	"for":      FOR,
+	"continue": CONTINUE,
+	"break":    BREAK,
 }
 
 var SingleCharacterToken = map[byte]Type{
@@ -74,6 +81,7 @@ var SingleCharacterToken = map[byte]Type{
 	'-': MINUS,
 	'*': MULTIPLY,
 	'/': DIVIDE,
+	'%': MOD,
 	';': SEMI,
 	':': COLON,
 	',': COMMA,

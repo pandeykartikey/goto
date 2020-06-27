@@ -103,28 +103,29 @@ func (i *Identifier) String() string {
 	return i.Value
 }
 
-type VarStatement struct {
-	Token token.Token
-	Name  *Identifier
-	Value Expression
+type AssignStatement struct {
+	Token     token.Token
+	NameList  *IdentifierList
+	ValueList *ExpressionList
 }
 
-func (vs *VarStatement) statementNode() {}
+func (as *AssignStatement) statementNode() {}
 
-func (vs *VarStatement) TokenLiteral() string {
-	return vs.Token.Literal
+func (as *AssignStatement) TokenLiteral() string {
+	return as.Token.Literal
 }
 
-func (vs *VarStatement) String() string {
+func (as *AssignStatement) String() string {
 	var out strings.Builder
+	if as.Token.Literal == "var" {
+		out.WriteString("var ")
+	}
 
-	out.WriteString(vs.TokenLiteral())
-	out.WriteString(" ")
-	out.WriteString(vs.Name.String())
+	out.WriteString(as.NameList.String())
 
-	if vs.Value != nil {
+	if as.ValueList != nil {
 		out.WriteString(" = ")
-		out.WriteString(vs.Value.String())
+		out.WriteString(as.ValueList.String())
 	}
 
 	out.WriteString(";")
@@ -300,15 +301,12 @@ func (il *IdentifierList) TokenLiteral() string {
 func (il *IdentifierList) String() string {
 	var out strings.Builder
 
-	out.WriteString("(")
 	for idx, param := range il.Identifiers {
 		if idx > 0 {
 			out.WriteString(",")
 		}
 		out.WriteString(param.String())
 	}
-
-	out.WriteString(")")
 
 	return out.String()
 }
@@ -332,9 +330,9 @@ func (fs *FuncStatement) String() string {
 	out.WriteString(fs.TokenLiteral())
 	out.WriteString(" ")
 	out.WriteString(fs.Name.String())
-	out.WriteString(" ")
+	out.WriteString(" (")
 	out.WriteString(fs.ParameterList.String())
-	out.WriteString(" ")
+	out.WriteString(") ")
 	out.WriteString(fs.FuncBody.String())
 
 	return out.String()

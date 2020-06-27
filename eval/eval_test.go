@@ -47,6 +47,7 @@ func TestEvalIntegerExpression(t *testing.T) {
 		{"2 * 2 * 2 * 2 * 2", 32},
 		{"-50 + 100 + -50", 0},
 		{"5 * 2 + 10", 20},
+		{"5 % 2 + 10", 11},
 		{"5 + 2 * 10", 25},
 		{"20 + 2 * -10", 0},
 		{"50 / 2 * 2 + 10", 60},
@@ -270,7 +271,11 @@ func TestLetStatements(t *testing.T) {
 		{"var a = 5 * 5; a;", 25},
 		{"var a = 5; var b = a; b;", 5},
 		{"var a = 5; var b = a; var c = a + b + 5; c;", 15},
+		{"var a,b = 4,5; a+b;", 9},
+		{"var a,b = 4,5; a = 6; a+b;", 11},
+		{"var a,b = 4,5; a,b = 5,6; a+b;", 11},
 	}
+
 	for _, tt := range tests {
 		out := evalInput(tt.input)
 		testIntegerObject(t, out, tt.exp)
@@ -285,6 +290,7 @@ func TestFunctionObject(t *testing.T) {
 	if !ok {
 		t.Fatalf("object is not Function. got=%T", out)
 	}
+
 	if len(fn.ParameterList.Identifiers) != 1 {
 		t.Fatalf("function has wrong parameters. Parameters=%+v", fn.ParameterList.Identifiers)
 	}

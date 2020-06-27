@@ -59,18 +59,18 @@ func testVarStatement(t *testing.T, s ast.Statement, name string) bool {
 		return false
 	}
 
-	varStmt, ok := s.(*ast.VarStatement)
+	varStmt, ok := s.(*ast.AssignStatement)
 
 	if !ok {
-		t.Errorf("s not *ast.VarStatement. got=%T", s)
+		t.Errorf("s not *ast.AssignStatement. got=%T", s)
 		return false
 	}
-	if varStmt.Name.Value != name {
-		t.Errorf("VarStmt.Name.Value not '%s'. got=%s", name, varStmt.Name.Value)
+	if varStmt.NameList.Identifiers[0].Value != name {
+		t.Errorf("varStmt.NameList.Identifiers[0].Value not '%s'. got=%s", name, varStmt.NameList.Identifiers[0].Value)
 		return false
 	}
-	if varStmt.Name.TokenLiteral() != name {
-		t.Errorf("s.Name not '%s'. got=%s", name, varStmt.Name)
+	if varStmt.NameList.Identifiers[0].TokenLiteral() != name {
+		t.Errorf("s.Name not '%s'. got=%s", name, varStmt.NameList.Identifiers[0].TokenLiteral())
 		return false
 	}
 	return true
@@ -179,33 +179,59 @@ func testLiteralExpression(t *testing.T, exp ast.Expression, expected interface{
 	case string:
 		if _, ok := exp.(*ast.Identifier); ok {
 			return testIdentifier(t, exp, v)
-		} else {
-			return testString(t, exp, v)
 		}
+		return testString(t, exp, v)
 	}
 	t.Errorf("type of exp not handled. got=%T", exp)
 
 	return false
 }
 
-func TestVarStatements(t *testing.T) {
-	input := `var a = b + 6;
-var bar = 5;
-var foo = 2;`
-
-	program := parseInput(t, input, 3)
-
+func TestAssignStatements(t *testing.T) {
 	tests := []struct {
-		expectedIdentifier string
+		input             string
+		expTokenLiteral   string
+		expIdentifierList []string
 	}{
-		{"a"},
-		{"bar"},
-		{"foo"},
+		{
+			"var a = b + 6;",
+			"var",
+			[]string{"a"},
+		},
+		{
+			"var a,b,c;",
+			"var",
+			[]string{"a", "b", "c"},
+		},
+		{
+			"var a,b,c = 4,5,6;",
+			"var",
+			[]string{"a", "b", "c"},
+		},
+		{
+			"a,b =5,6;",
+			"=",
+			[]string{"a", "b"},
+		},
+		{
+			"a = 5;",
+			"=",
+			[]string{"a"},
+		},
 	}
 
-	for i, tt := range tests {
-		stmt := program.Statements[i]
-		if !testVarStatement(t, stmt, tt.expectedIdentifier) {
+	for _, tt := range tests {
+		program := parseInput(t, tt.input, 1)
+		stmt, ok := program.Statements[0].(*ast.AssignStatement)
+		if !ok {
+			t.Errorf("s not *ast.AssignStatement. got=%T", stmt)
+			continue
+		}
+		if stmt.TokenLiteral() != tt.expTokenLiteral {
+			t.Errorf("stmt.TokenLiteral not '%s'. got=%s", tt.expTokenLiteral, stmt.TokenLiteral())
+			continue
+		}
+		if !testIdentifierList(t, stmt.NameList, tt.expIdentifierList) {
 			return
 		}
 	}
@@ -323,6 +349,7 @@ func TestParsingInfixExpressions(t *testing.T) {
 		{"true == true", true, "==", true},
 		{"true != false", true, "!=", false},
 		{"false == false", false, "==", false},
+		{"5 % 5;", 5, "%", 5},
 	}
 	for _, tt := range infixTests {
 		program := parseInput(t, tt.input, 1)
@@ -363,6 +390,10 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		{
 			"a * b / c",
 			"((a * b) / c)",
+		},
+		{
+			"a % 5 / c",
+			"((a % 5) / c)",
 		},
 		{
 			"a + b / c",

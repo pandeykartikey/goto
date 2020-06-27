@@ -150,10 +150,24 @@ func (env *Environment) Get(id string) (Object, bool) {
 	return value, ok
 }
 
-func (env *Environment) Set(id string, obj Object) Object {
+func (env *Environment) Create(id string, obj Object) (Object, bool) {
 	// TODO: check for in which env does id exists and then update.
+	_, ok := env.Get(id)
+	if ok {
+		return nil, false
+	}
 	env.store[id] = obj
-	return env.store[id]
+	return env.store[id], true
+}
+
+func (env *Environment) Update(id string, obj Object) (Object, bool) {
+	// TODO: check for in which env does id exists and then update.
+	_, ok := env.Get(id)
+	if !ok {
+		return nil, false
+	}
+	env.store[id] = obj
+	return env.store[id], true
 }
 
 func NewEnvironment() *Environment {

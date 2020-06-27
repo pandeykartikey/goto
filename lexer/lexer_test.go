@@ -7,12 +7,17 @@ import (
 )
 
 func TestNextToken(t *testing.T) {
-	input := `var a = b + 6;
+	input := `var a = b % 6;
 				if 4>=10 {
 					return a-b;
 				}
 				"foobar"
 				"foo bar"
+				a,b = 4,5;
+				for a=3; a>5; a=a+1 {
+					continue;
+					break;
+				}
 				`
 
 	tests := []struct {
@@ -23,7 +28,7 @@ func TestNextToken(t *testing.T) {
 		{token.IDENT, "a"},
 		{token.ASSIGN, "="},
 		{token.IDENT, "b"},
-		{token.PLUS, "+"},
+		{token.MOD, "%"},
 		{token.INT, "6"},
 		{token.SEMI, ";"},
 		{token.IF, "if"},
@@ -39,6 +44,34 @@ func TestNextToken(t *testing.T) {
 		{token.RBRACE, "}"},
 		{token.STRING, "foobar"},
 		{token.STRING, "foo bar"},
+		{token.IDENT, "a"},
+		{token.COMMA, ","},
+		{token.IDENT, "b"},
+		{token.ASSIGN, "="},
+		{token.INT, "4"},
+		{token.COMMA, ","},
+		{token.INT, "5"},
+		{token.SEMI, ";"},
+		{token.FOR, "for"},
+		{token.IDENT, "a"},
+		{token.ASSIGN, "="},
+		{token.INT, "3"},
+		{token.SEMI, ";"},
+		{token.IDENT, "a"},
+		{token.GT, ">"},
+		{token.INT, "5"},
+		{token.SEMI, ";"},
+		{token.IDENT, "a"},
+		{token.ASSIGN, "="},
+		{token.IDENT, "a"},
+		{token.PLUS, "+"},
+		{token.INT, "1"},
+		{token.LBRACE, "{"},
+		{token.CONTINUE, "continue"},
+		{token.SEMI, ";"},
+		{token.BREAK, "break"},
+		{token.SEMI, ";"},
+		{token.RBRACE, "}"},
 	}
 
 	l := New(input)

@@ -2,14 +2,16 @@ package eval
 
 import (
 	"fmt"
+
 	"goto/ast"
 	"goto/object"
 )
 
 var (
-	NULL  = &object.Null{}
-	TRUE  = &object.Boolean{Value: true}
-	FALSE = &object.Boolean{Value: false}
+	NULL        = &object.Null{}
+	DEFAULT_INT = &object.Integer{Value: 0}
+	TRUE        = &object.Boolean{Value: true}
+	FALSE       = &object.Boolean{Value: false}
 )
 
 func nativeBoolToBooleanObject(input bool) object.Object {
@@ -110,6 +112,8 @@ func evalInfixIntegerExpression(op string, left *object.Integer, right *object.I
 		return &object.Integer{Value: leftVal * rightVal}
 	case "/":
 		return &object.Integer{Value: leftVal / rightVal}
+	case "%":
+		return &object.Integer{Value: leftVal % rightVal}
 	case "<":
 		return nativeBoolToBooleanObject(leftVal < rightVal)
 	case ">":
@@ -197,6 +201,48 @@ func evalExpressionList(exprList *ast.ExpressionList, env *object.Environment) o
 	return &object.List{Value: objList}
 }
 
+func evalAssignStatement(assignStmt *ast.AssignStatement, env *object.Environment) object.Object {
+
+	var (
+		valueList *object.List
+		ok        bool
+	)
+
+	if assignStmt.ValueList != nil {
+		evaluatedList := evalExpressionList(assignStmt.ValueList, env)
+		if isError(evaluatedList) {
+			return evaluatedList
+		}
+		valueList, ok = evaluatedList.(*object.List)
+		if !ok {
+			return nil
+		}
+	}
+
+	for idx, ident := range assignStmt.NameList.Identifiers {
+		switch assignStmt.TokenLiteral() {
+		case "var":
+			if valueList != nil {
+				if _, ok = env.Create(ident.Value, *valueList.Value[idx]); !ok {
+					return errorMessageToObject("An identifier already exists with that name")
+				}
+			} else {
+				if _, ok = env.Create(ident.Value, DEFAULT_INT); !ok {
+					return errorMessageToObject("An identifier already exists with that name")
+				}
+			}
+		case "=":
+			if _, ok = env.Update(ident.Value, *valueList.Value[idx]); !ok {
+				return errorMessageToObject("An identifier does not exists with that name")
+			}
+		default:
+			return errorMessageToObject("Unexpected Error encountered")
+		}
+	}
+
+	return nil
+}
+
 func evalIfStatement(ifStmt *ast.IfStatement, env *object.Environment) object.Object {
 	cond := Eval(ifStmt.Condition, env)
 
@@ -217,7 +263,9 @@ func evalFuncStatement(funcStmt *ast.FuncStatement, env *object.Environment) obj
 		FuncBody:      funcStmt.FuncBody,
 	}
 
-	env.Set(funcStmt.Name.Value, funcObj)
+	if _, ok := env.Create(funcStmt.Name.Value, funcObj); !ok {
+		return errorMessageToObject("A function already exists with that name")
+	}
 
 	return nil
 }
@@ -226,7 +274,7 @@ func addArgumentsToEnvironment(fn *object.Function, objList *object.List, env *o
 	extendedEnv := object.ExtendEnv(env)
 
 	for idx, param := range fn.ParameterList.Identifiers {
-		extendedEnv.Set(param.Value, *objList.Value[idx])
+		extendedEnv.Create(param.Value, *objList.Value[idx])
 	}
 
 	return extendedEnv
@@ -271,12 +319,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return returnVal
 		}
 		return &object.ReturnValue{Value: returnVal}
-	case *ast.VarStatement:
-		val := Eval(node.Value, env)
-		if isError(val) {
-			return val
-		}
-		env.Set(node.Name.Value, val)
+	case *ast.AssignStatement:
+		return evalAssignStatement(node, env)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression, env)
 	case *ast.PrefixExpression:

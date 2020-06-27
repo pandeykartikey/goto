@@ -31,6 +31,7 @@ var precedences = map[token.Type]int{
 	token.MINUS:    PLUS,
 	token.DIVIDE:   MULTIPLY,
 	token.MULTIPLY: MULTIPLY,
+	token.MOD:      MULTIPLY,
 	token.LPAREN:   CALL,
 }
 
@@ -227,12 +228,11 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 	return infixexp
 }
 
-func (p *Parser) parseCallArguments() *ast.ExpressionList {
+// parses exprA, ... ,exprZ Initial currtoken at exprA and Final after exprZ
+func (p *Parser) parseExpressionList() *ast.ExpressionList {
 	args := &ast.ExpressionList{Token: p.currToken}
 
-	p.nextToken()
-
-	for !p.currTokenIs(token.RPAREN) && !p.currTokenIs(token.EOF) {
+	for !p.currTokenIs(token.EOF) {
 		exp := p.parseExpression(LOWEST)
 		args.Expressions = append(args.Expressions, &exp)
 
@@ -240,13 +240,13 @@ func (p *Parser) parseCallArguments() *ast.ExpressionList {
 			p.nextToken(2)
 			continue
 		}
-		if p.expectPeek(token.RPAREN) {
-			break
-		}
-		return nil
+
+		p.nextToken()
+		return args
 	}
 
-	return args
+	p.errors = append(p.errors, "End Of File encountered while parsing")
+	return nil
 }
 
 func (p *Parser) parseCallExpression(left ast.Expression) ast.Expression {
@@ -256,7 +256,14 @@ func (p *Parser) parseCallExpression(left ast.Expression) ast.Expression {
 		return nil
 	}
 	exp.FunctionName = fname
-	exp.ArgumentList = p.parseCallArguments()
+
+	p.nextToken()
+	exp.ArgumentList = p.parseExpressionList()
+
+	if !p.expectCurr(token.RPAREN) {
+		return nil
+	}
+
 	return exp
 }
 
@@ -296,28 +303,37 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 	return nil
 }
 
-func (p *Parser) parseVarStatement() *ast.VarStatement {
-	stmt := &ast.VarStatement{Token: p.currToken}
+func (p *Parser) parseAssignStatement() *ast.AssignStatement {
+	stmt := &ast.AssignStatement{}
 
-	p.nextToken()
+	if p.currTokenIs(token.VAR) {
+		stmt.Token = p.currToken
+		p.nextToken()
+	}
 
-	name, ok := p.parseIdentifier().(*ast.Identifier)
+	stmt.NameList = p.parseIdentifierList()
 
-	if !ok {
+	if stmt.Token.Type == token.VAR && p.currTokenIs(token.SEMI) {
+		return stmt
+	}
+
+	if !p.expectCurr(token.ASSIGN) {
 		return nil
 	}
 
-	stmt.Name = name
-
-	if !p.expectPeek(token.ASSIGN) {
-		return nil
+	if stmt.Token.Type != token.VAR {
+		stmt.Token = p.currToken
 	}
 
 	p.nextToken()
 
-	stmt.Value = p.parseExpression(LOWEST)
+	stmt.ValueList = p.parseExpressionList()
 
-	if !p.expectPeek(token.SEMI) {
+	if len(stmt.ValueList.Expressions) != len(stmt.NameList.Identifiers) {
+		p.errors = append(p.errors, "Mismatch in number of values on both side of =")
+	}
+
+	if !p.expectCurr(token.SEMI) {
 		return nil
 	}
 
@@ -389,12 +405,11 @@ func (p *Parser) parseIfStatement() *ast.IfStatement {
 	return stmt
 }
 
+// parses identA, ... ,identZ Initial currtoken at identA and Final after identZ
 func (p *Parser) parseIdentifierList() *ast.IdentifierList {
 	identlist := &ast.IdentifierList{Token: p.currToken}
 
-	p.nextToken()
-
-	for !p.currTokenIs(token.RPAREN) && !p.currTokenIs(token.EOF) {
+	for !p.currTokenIs(token.EOF) {
 
 		ident, ok := p.parseIdentifier().(*ast.Identifier)
 
@@ -405,21 +420,19 @@ func (p *Parser) parseIdentifierList() *ast.IdentifierList {
 		if ident != nil {
 			identlist.Identifiers = append(identlist.Identifiers, ident)
 		}
+
 		if p.peekTokenIs(token.COMMA) {
 			p.nextToken(2)
 			continue
 		}
-		if p.expectPeek(token.RPAREN) {
-			break
-		}
-		return nil
+
+		p.nextToken()
+		return identlist
 	}
 
-	if p.expectCurr(token.RPAREN) {
-		return nil
-	}
+	p.errors = append(p.errors, "End Of File encountered while parsing")
 
-	return identlist
+	return nil
 }
 
 func (p *Parser) parseFuncStatement() *ast.FuncStatement {
@@ -439,7 +452,13 @@ func (p *Parser) parseFuncStatement() *ast.FuncStatement {
 		return nil
 	}
 
+	p.nextToken()
+
 	stmt.ParameterList = p.parseIdentifierList()
+
+	if !p.expectCurr(token.RPAREN) {
+		return nil
+	}
 
 	if !p.expectPeek(token.LBRACE) {
 		return nil
@@ -465,7 +484,7 @@ func (p *Parser) parseExpressionStatement() *ast.ExpressionStatement {
 func (p *Parser) parseStatement() ast.Statement {
 	switch p.currToken.Type {
 	case token.VAR:
-		return p.parseVarStatement()
+		return p.parseAssignStatement()
 	case token.RETURN:
 		return p.parseReturnStatement()
 	case token.IF:
@@ -477,6 +496,11 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.ILLEGAL:
 		p.errors = append(p.errors, "ILLEGAL Token encountered")
 		return nil
+	case token.IDENT:
+		if p.peekTokenIs(token.COMMA) || p.peekTokenIs(token.ASSIGN) {
+			return p.parseAssignStatement()
+		}
+		fallthrough
 	default:
 		return p.parseExpressionStatement()
 	}
