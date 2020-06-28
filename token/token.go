@@ -48,10 +48,12 @@ const (
 	COMMA = ","
 	QUOTE = "\""
 
-	LPAREN = "("
-	RPAREN = ")"
-	LBRACE = "{"
-	RBRACE = "}"
+	LPAREN   = "("
+	RPAREN   = ")"
+	LBRACE   = "{"
+	RBRACE   = "}"
+	LBRACKET = "["
+	RBRACKET = "]"
 
 	// Keywords
 	VAR      = "VAR"
@@ -91,6 +93,8 @@ var SingleCharacterToken = map[byte]Type{
 	')': RPAREN,
 	'{': LBRACE,
 	'}': RBRACE,
+	'[': LBRACKET,
+	']': RBRACKET,
 }
 
 var CommonPrefixToken = map[byte]CommonPrefixTokenPair{

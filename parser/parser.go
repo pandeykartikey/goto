@@ -19,6 +19,7 @@ const ( // These represent the operator precedence values.
 	MULTIPLY    // *
 	PREFIX      // -X or !X
 	CALL        // myFunction(X)
+	INDEX       // []
 )
 
 var precedences = map[token.Type]int{
@@ -37,6 +38,7 @@ var precedences = map[token.Type]int{
 	token.MOD:      MULTIPLY,
 	token.POW:      MULTIPLY,
 	token.LPAREN:   CALL,
+	token.LBRACKET: INDEX,
 }
 
 type (
@@ -75,6 +77,7 @@ func New(l *lexer.Lexer) *Parser {
 		{token.FALSE, p.parseBoolean},
 		{token.STRING, p.parseString},
 		{token.LPAREN, p.parseGroupedExpression},
+		{token.LBRACKET, p.parseList},
 	}
 
 	for _, fn := range prefixfns {
@@ -86,6 +89,7 @@ func New(l *lexer.Lexer) *Parser {
 		p.registerInfix(keys, p.parseInfixExpression)
 	}
 
+	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
 
 	p.setToken() // Only to be called for initialization of Parser pointers
@@ -386,6 +390,30 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	}
 
 	return block
+}
+
+func (p *Parser) parseList() ast.Expression {
+	list := &ast.List{Token: p.currToken}
+	p.nextToken()
+	list.Elements = p.parseExpressionList()
+
+	if !p.expectCurr(token.RBRACKET) {
+		return nil
+	}
+
+	return list
+}
+
+func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
+	exp := &ast.IndexExpression{Token: p.currToken, Left: left}
+	p.nextToken()
+
+	exp.Index = p.parseExpression(LOWEST)
+	if !p.expectPeek(token.RBRACKET) {
+		return nil
+	}
+
+	return exp
 }
 
 func (p *Parser) parseIfStatement() *ast.IfStatement {

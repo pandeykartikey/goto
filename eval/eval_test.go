@@ -252,6 +252,14 @@ func TestErrorHandling(t *testing.T) {
 			`"Hello" - "World"`,
 			"Unknown Operator: STRING - STRING",
 		},
+		{
+			"[1, 2, 3][3]",
+			"List index out of range",
+		},
+		{
+			"[1, 2, 3][-1]",
+			"List index out of range",
+		},
 	}
 
 	for _, tt := range tests {
@@ -366,5 +374,75 @@ func TestForStatement(t *testing.T) {
 	for _, tt := range tests {
 		out := evalInput(tt.input)
 		testIntegerObject(t, out, tt.exp)
+	}
+}
+
+func TestList(t *testing.T) {
+	input := "[1, 2 * 2, 3 + 3]"
+	out := evalInput(input)
+	result, ok := out.(*object.List)
+	if !ok {
+		t.Fatalf("object is not List. got=%T ", out)
+	}
+	if len(result.Value) != 3 {
+		t.Fatalf("list has wrong num of elements. got=%d", len(result.Value))
+	}
+	if !testIntegerObject(t, *result.Value[0], 1) {
+		return
+	}
+	if !testIntegerObject(t, *result.Value[1], 4) {
+		return
+	}
+	if !testIntegerObject(t, *result.Value[2], 6) {
+		return
+	}
+}
+
+func TestIndexExpressions(t *testing.T) {
+	tests := []struct {
+		input string
+		exp   interface{}
+	}{
+		{
+			"[1, 2, 3][0]",
+			1,
+		},
+		{
+			"[1, 2, 3][1]",
+			2,
+		},
+		{
+			"[1, 2, 3][2]",
+			3,
+		},
+		{
+			"var i = 0; [1][i];",
+			1,
+		},
+		{
+			"[1, 2, 3][1 + 1];",
+			3,
+		},
+		{
+			"var a = [1, 2, 3]; a[2];",
+			3,
+		},
+		{
+			"var b = [1, 2, 3]; b[0] + b[1] + b[2];",
+			6,
+		},
+		{
+			"var a = [1, 2, 3]; var i = a[0]; a[i]",
+			2,
+		},
+	}
+	for _, tt := range tests {
+		out := evalInput(tt.input)
+		integ, ok := tt.exp.(int)
+		if ok {
+			testIntegerObject(t, out, int64(integ))
+		} else {
+			testNullObject(t, out)
+		}
 	}
 }

@@ -13,6 +13,7 @@ func TestNextToken(t *testing.T) {
 				}
 				"foobar"
 				"foo bar"
+				[1, 2];
 				a,b = 4,5;
 				for a=3; a>5 && a<4 ; a=a**1 {
 					continue;
@@ -44,6 +45,12 @@ func TestNextToken(t *testing.T) {
 		{token.RBRACE, "}"},
 		{token.STRING, "foobar"},
 		{token.STRING, "foo bar"},
+		{token.LBRACKET, "["},
+		{token.INT, "1"},
+		{token.COMMA, ","},
+		{token.INT, "2"},
+		{token.RBRACKET, "]"},
+		{token.SEMI, ";"},
 		{token.IDENT, "a"},
 		{token.COMMA, ","},
 		{token.IDENT, "b"},

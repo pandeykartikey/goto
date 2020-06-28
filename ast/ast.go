@@ -359,7 +359,6 @@ func (el *ExpressionList) TokenLiteral() string {
 func (el *ExpressionList) String() string {
 	var out strings.Builder
 
-	out.WriteString("(")
 	if el != nil {
 		for idx, param := range el.Expressions {
 			if idx > 0 {
@@ -368,7 +367,6 @@ func (el *ExpressionList) String() string {
 			out.WriteString((*param).String())
 		}
 	}
-	out.WriteString(")")
 
 	return out.String()
 }
@@ -389,8 +387,9 @@ func (ce *CallExpression) String() string {
 	var out strings.Builder
 
 	out.WriteString(ce.FunctionName.String())
+	out.WriteString("(")
 	out.WriteString(ce.ArgumentList.String())
-
+	out.WriteString(")")
 	return out.String()
 }
 
@@ -437,4 +436,44 @@ func (lc *LoopControlStatement) TokenLiteral() string {
 
 func (lc *LoopControlStatement) String() string {
 	return lc.Token.Literal + ";"
+}
+
+type List struct {
+	Token    token.Token // the '['
+	Elements *ExpressionList
+}
+
+func (l *List) expressionNode() {}
+
+func (l *List) TokenLiteral() string {
+	return l.Token.Literal
+}
+
+func (l *List) String() string {
+	var out strings.Builder
+
+	out.WriteString("[")
+	out.WriteString(l.Elements.String())
+	out.WriteString("]")
+	return out.String()
+}
+
+type IndexExpression struct {
+	Token token.Token // The [ token
+	Left  Expression
+	Index Expression
+}
+
+func (ie *IndexExpression) expressionNode() {}
+func (ie *IndexExpression) TokenLiteral() string {
+	return ie.Token.Literal
+}
+func (ie *IndexExpression) String() string {
+	var out strings.Builder
+	out.WriteString("(")
+	out.WriteString(ie.Left.String())
+	out.WriteString("[")
+	out.WriteString(ie.Index.String())
+	out.WriteString("])")
+	return out.String()
 }

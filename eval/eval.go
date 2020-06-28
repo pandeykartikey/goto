@@ -223,6 +223,25 @@ func evalExpressionList(exprList *ast.ExpressionList, env *object.Environment) o
 	return &object.List{Value: objList}
 }
 
+func evalArrayIndexExpression(list *object.List, idx int64) object.Object {
+	max := int64(len(list.Value) - 1)
+
+	if idx < 0 || idx > max {
+		return errorMessageToObject("List index out of range")
+	}
+
+	return *list.Value[idx]
+}
+
+func evalIndexExpression(left, index object.Object) object.Object {
+	switch {
+	case left.Type() == object.LIST_OBJ && index.Type() == object.INTEGER_OBJ:
+		return evalArrayIndexExpression(left.(*object.List), index.(*object.Integer).Value)
+	default:
+		return errorMessageToObject("index operator not supported: %s", left.Type())
+	}
+}
+
 func evalAssignment(assignStmt *ast.Assignment, env *object.Environment) object.Object {
 
 	var (
@@ -397,6 +416,23 @@ func evalProgram(node ast.Node, env *object.Environment) object.Object {
 		return evalAssignment(node, env)
 	case *ast.ExpressionStatement:
 		return evalProgram(node.Expression, env)
+	case *ast.List:
+		exprList := evalExpressionList(node.Elements, env)
+
+		if isError(exprList) {
+			return exprList
+		}
+		return exprList
+	case *ast.IndexExpression:
+		left := evalProgram(node.Left, env)
+		if isError(left) {
+			return left
+		}
+		index := evalProgram(node.Index, env)
+		if isError(index) {
+			return index
+		}
+		return evalIndexExpression(left, index)
 	case *ast.PrefixExpression:
 		right := evalProgram(node.Right, env)
 		if isError(right) {
