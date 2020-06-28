@@ -43,7 +43,7 @@ func Start() {
 
 		if len(p.Errors()) != 0 {
 			if line == "" {
-				printParseErrors(p.Errors())
+				p.PrintParseErrors()
 				code = ""
 				prompt = PS1
 			} else {
@@ -61,11 +61,5 @@ func Start() {
 		if result != nil {
 			fmt.Println(result.Inspect())
 		}
-	}
-}
-
-func printParseErrors(errors []string) {
-	for _, msg := range errors {
-		fmt.Println("Error: ", msg)
 	}
 }

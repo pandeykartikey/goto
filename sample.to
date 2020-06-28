@@ -1,0 +1,5 @@
+func identity(x) {
+	return x;
+}
+
+identity(4); 

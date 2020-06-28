@@ -574,3 +574,9 @@ func (p *Parser) ParseProgram() *ast.Program {
 
 	return program
 }
+
+func (p *Parser) PrintParseErrors() {
+	for _, msg := range p.errors {
+		fmt.Println("Error: ", msg)
+	}
+}
