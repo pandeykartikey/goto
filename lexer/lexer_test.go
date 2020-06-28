@@ -14,7 +14,7 @@ func TestNextToken(t *testing.T) {
 				"foobar"
 				"foo bar"
 				a,b = 4,5;
-				for a=3; a>5; a=a+1 {
+				for a=3; a>5 && a<4 ; a=a**1 {
 					continue;
 					break;
 				}
@@ -60,11 +60,15 @@ func TestNextToken(t *testing.T) {
 		{token.IDENT, "a"},
 		{token.GT, ">"},
 		{token.INT, "5"},
+		{token.AND, "&&"},
+		{token.IDENT, "a"},
+		{token.LT, "<"},
+		{token.INT, "4"},
 		{token.SEMI, ";"},
 		{token.IDENT, "a"},
 		{token.ASSIGN, "="},
 		{token.IDENT, "a"},
-		{token.PLUS, "+"},
+		{token.POW, "**"},
 		{token.INT, "1"},
 		{token.LBRACE, "{"},
 		{token.CONTINUE, "continue"},

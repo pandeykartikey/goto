@@ -2,6 +2,7 @@ package eval
 
 import (
 	"fmt"
+	"math"
 
 	"goto/ast"
 	"goto/object"
@@ -105,6 +106,8 @@ func evalInfixIntegerExpression(op string, left *object.Integer, right *object.I
 		return &object.Integer{Value: leftVal / rightVal}
 	case "%":
 		return &object.Integer{Value: leftVal % rightVal}
+	case "**":
+		return &object.Integer{Value: int64(math.Pow(float64(leftVal), float64(rightVal)))}
 	case "<":
 		return nativeBoolToBooleanObject(leftVal < rightVal)
 	case ">":
@@ -151,6 +154,13 @@ func evalInfixStringExpression(op string, left *object.String, right *object.Str
 }
 
 func evalInfixExpression(op string, left object.Object, right object.Object) object.Object {
+	switch op {
+	case "&&":
+		return nativeBoolToBooleanObject(isTrue(left) && isTrue(right))
+	case "||":
+		return nativeBoolToBooleanObject(isTrue(left) || isTrue(right))
+	}
+
 	if left.Type() != right.Type() {
 		return errorMessageToObject("Type Mismatch: %s %s %s", left.Type(), op, right.Type())
 	}
@@ -167,7 +177,7 @@ func evalInfixExpression(op string, left object.Object, right object.Object) obj
 	}
 }
 
-// NULL is false and all other values are true
+// NULL,0,"" is false and all other values are true
 func isTrue(obj object.Object) bool {
 	switch obj {
 	case TRUE:
@@ -177,7 +187,21 @@ func isTrue(obj object.Object) bool {
 	case NULL:
 		return false
 	default:
-		return true
+		switch obj.(type) {
+		case *object.Integer:
+			if obj.(*object.Integer).Value == 0 {
+				return false
+			}
+			return true
+		case *object.String:
+			if obj.(*object.String).Value == "" {
+				return false
+			}
+			return true
+		default:
+			return true
+		}
+
 	}
 }
 

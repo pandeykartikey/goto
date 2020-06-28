@@ -31,6 +31,7 @@ const (
 	MULTIPLY = "*"
 	DIVIDE   = "/"
 	MOD      = "%"
+	POW      = "**"
 	EQ       = "=="
 	NOT      = "!"
 	NOT_EQ   = "!="
@@ -38,6 +39,8 @@ const (
 	LT_EQ    = "<="
 	GT       = ">"
 	GT_EQ    = ">="
+	AND      = "&&"
+	OR       = "||"
 
 	// Delimiters
 	SEMI  = ";"
@@ -79,7 +82,6 @@ var Keywords = map[string]Type{
 var SingleCharacterToken = map[byte]Type{
 	'+': PLUS,
 	'-': MINUS,
-	'*': MULTIPLY,
 	'/': DIVIDE,
 	'%': MOD,
 	';': SEMI,
@@ -93,6 +95,9 @@ var SingleCharacterToken = map[byte]Type{
 
 var CommonPrefixToken = map[byte]CommonPrefixTokenPair{
 	'=': {NextCharacter: '=', MultipleCharacterType: EQ, SingleCharacterType: ASSIGN},
+	'*': {NextCharacter: '*', MultipleCharacterType: POW, SingleCharacterType: MULTIPLY},
+	'&': {NextCharacter: '&', MultipleCharacterType: AND, SingleCharacterType: AND},
+	'|': {NextCharacter: '|', MultipleCharacterType: OR, SingleCharacterType: OR},
 	'!': {NextCharacter: '=', MultipleCharacterType: NOT_EQ, SingleCharacterType: NOT},
 	'<': {NextCharacter: '=', MultipleCharacterType: LT_EQ, SingleCharacterType: LT},
 	'>': {NextCharacter: '=', MultipleCharacterType: GT_EQ, SingleCharacterType: GT},

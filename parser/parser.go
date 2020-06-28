@@ -12,6 +12,7 @@ import (
 const ( // These represent the operator precedence values.
 	_int = iota
 	LOWEST
+	LOGICAL     // && or ||
 	EQUALS      // ==
 	LESSGREATER // > or <
 	PLUS        // +
@@ -21,6 +22,8 @@ const ( // These represent the operator precedence values.
 )
 
 var precedences = map[token.Type]int{
+	token.AND:      LOGICAL,
+	token.OR:       LOGICAL,
 	token.EQ:       EQUALS,
 	token.NOT_EQ:   EQUALS,
 	token.LT:       LESSGREATER,
@@ -32,6 +35,7 @@ var precedences = map[token.Type]int{
 	token.DIVIDE:   MULTIPLY,
 	token.MULTIPLY: MULTIPLY,
 	token.MOD:      MULTIPLY,
+	token.POW:      MULTIPLY,
 	token.LPAREN:   CALL,
 }
 
