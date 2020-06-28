@@ -7,7 +7,7 @@ import (
 )
 
 var builtins = map[string]*object.Builtin{
-	"len": &object.Builtin{
+	"len": {
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
 				return errorMessageToObject("wrong number of arguments. got=%d, want=1", len(args))
@@ -23,7 +23,7 @@ var builtins = map[string]*object.Builtin{
 
 		},
 	},
-	"append": &object.Builtin{
+	"append": {
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 2 {
 				return errorMessageToObject("wrong number of arguments. got=%d, want=2", len(args))
@@ -36,7 +36,7 @@ var builtins = map[string]*object.Builtin{
 			return NULL
 		},
 	},
-	"print": &object.Builtin{
+	"print": {
 		Fn: func(args ...object.Object) object.Object {
 			for _, arg := range args {
 				fmt.Println(arg.Inspect())

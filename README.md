@@ -1,4 +1,4 @@
-# GoTo
+# Goto
 > Goto is an interpreted programming language written in go.
 
 [![License: MIT](http://img.shields.io/github/license/pandeykartikey/goto.svg)](https://github.com/pandeykartikey/goto/blob/master/LICENSE.md) [![Go Report Card](https://goreportcard.com/badge/github.com/pandeykartikey/goto)](https://goreportcard.com/report/github.com/pandeykartikey/goto) [![Release](http://img.shields.io/github/v/release/pandeykartikey/goto.svg)](https://github.com/pandeykartikey/goto/releases/latest)
@@ -14,8 +14,10 @@ Goto is a dynamically typed programming language written to support all the scri
 - For loops
 - Control Flow Statements `continue`, `break`, `return`
 - Multiple Assigments
+- Operator Precedence Parsing
 - Grouped Expressions
 - Functions
+- Scopes
 - Error Handling
 - Built in Functions: `append`, `print`, `len`
 
@@ -29,11 +31,13 @@ Goto is a dynamically typed programming language written to support all the scri
   - [5. Syntax](#5-syntax)
     - [5.1 Definitions](#51-definitions)
       - [5.1.1 Multiple Assignments](#511-multiple-assignments)
+      - [5.1.2 Scoping](#512-scoping)
     - [5.2 Arithmetic operations](#52-arithmetic-operations)
     - [5.3 Lists](#53-lists)
       - [5.3.1 Indexing](#531-indexing)
     - [5.4 Builtin functions](#54-builtin-functions)
     - [5.5 Functions](#55-functions)
+      - [5.5.1 Local Functions](#551-local-functions)
     - [5.6 If-else statements](#56-if-else-statements)
     - [5.7 For-loop statements](#57-for-loop-statements)
     - [5.8 Control flow statements](#58-control-flow-statements)
@@ -84,6 +88,12 @@ The datatypes of all the variables need not be the same.
 
     a,b = 1,true;
 
+#### 5.1.2 Scoping
+Goto supports hiding of global variable in block constructs
+
+    var a = 4;
+    if true { var a = 5; print(a);} //prints 5
+    print(a); //prints 4
 
 
 ### 5.2 Arithmetic operations
@@ -128,6 +138,18 @@ Goto defines function using `func` followed by an identifier and a parameter lis
     func identity(x) {
 	    return x;
     }
+
+#### 5.5.1 Local Functions
+You can define local functions inside a block statement with limited scope.
+
+    func addTwo(x) {
+      func addOne(x) { // addOne() is limited to addTwo()'s scope
+        return x + 1;
+      }
+      x = addOne(x);
+      return addOne(x);
+    }
+
 
 
 ### 5.6 If-else statements

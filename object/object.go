@@ -192,8 +192,12 @@ func (env *Environment) Update(id string, obj Object) (Object, bool) {
 	if !ok {
 		return nil, false
 	}
-	env.store[id] = obj
-	return env.store[id], true
+	if _, ok = env.store[id]; ok {
+		env.store[id] = obj
+		return env.store[id], true
+	}
+
+	return env.outer.Update(id, obj)
 }
 
 func NewEnvironment() *Environment {

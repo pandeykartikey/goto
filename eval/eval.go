@@ -326,10 +326,13 @@ func evalForStatement(forStmt *ast.ForStatement, env *object.Environment) object
 	if isError(out) {
 		return out
 	}
+
+	extendedEnv := object.ExtendEnv(env)
+
 forLoop:
 	for {
 
-		cond := evalProgram(forStmt.Condition, env)
+		cond := evalProgram(forStmt.Condition, extendedEnv)
 		if isError(cond) {
 			return cond
 		}
@@ -337,7 +340,7 @@ forLoop:
 			break
 		}
 
-		out = evalStatements(forStmt.ForBody.Statements, env, false)
+		out = evalStatements(forStmt.ForBody.Statements, extendedEnv, false)
 
 		switch out.(type) {
 		case *object.LoopControl:
@@ -348,7 +351,7 @@ forLoop:
 			return out
 		}
 
-		out = evalProgram(forStmt.Update, env)
+		out = evalProgram(forStmt.Update, extendedEnv)
 		if isError(out) {
 			return out
 		}
@@ -421,7 +424,8 @@ func evalCallExpression(name string, obj object.Object, env *object.Environment)
 func evalProgram(node ast.Node, env *object.Environment) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
-		return evalStatements(node.Statements, env, false)
+		extendedEnv := object.ExtendEnv(env)
+		return evalStatements(node.Statements, extendedEnv, false)
 	case *ast.FuncStatement:
 		return evalFuncStatement(node, env)
 	case *ast.CallExpression:
@@ -435,7 +439,8 @@ func evalProgram(node ast.Node, env *object.Environment) object.Object {
 	case *ast.IfStatement:
 		return evalIfStatement(node, env)
 	case *ast.BlockStatement:
-		return evalStatements(node.Statements, env, false)
+		extendedEnv := object.ExtendEnv(env)
+		return evalStatements(node.Statements, extendedEnv, false)
 	case *ast.ReturnStatement:
 		returnVal := evalProgram(node.ReturnValue, env)
 		if isError(returnVal) {
@@ -496,7 +501,7 @@ func evalProgram(node ast.Node, env *object.Environment) object.Object {
 
 func Eval(node ast.Node, env *object.Environment) object.Object {
 	env = environmentwithBuiltins(env)
-	out := evalProgram(node, env)
+	out := evalStatements(node.(*ast.Program).Statements, env, false)
 	switch out.(type) {
 	case *object.ReturnValue:
 		return errorMessageToObject("return used outside function")
