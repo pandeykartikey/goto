@@ -1,9 +1,9 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/pandeykartikey/goto/eval"
 	"github.com/pandeykartikey/goto/lexer"
@@ -12,13 +12,15 @@ import (
 	"github.com/pandeykartikey/goto/repl"
 )
 
-var filename = flag.String("f", "", "file to run")
-
 func main() {
-	flag.Parse()
 
-	if *filename != "" {
-		code, err := ioutil.ReadFile(*filename)
+	if len(os.Args) > 2 {
+		fmt.Println("Usage:", os.Args[0], "[FILE]")
+		return
+	}
+
+	if len(os.Args) == 2 {
+		code, err := ioutil.ReadFile(os.Args[1])
 		if err != nil {
 			fmt.Println(err.Error())
 			return
@@ -39,7 +41,7 @@ func main() {
 			fmt.Println(result.Inspect())
 		}
 	} else {
-		fmt.Printf("GoTo 1.0.0\n")
+		fmt.Printf("GoTo 0.1.0\n")
 
 		repl.Start()
 	}

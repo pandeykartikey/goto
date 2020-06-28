@@ -165,7 +165,7 @@ func (e *Error) Inspect() string {
 	return "Error: " + e.Message
 }
 
-type Environment struct { // TODO: separate identifiers from function names. add builtin functions after that.
+type Environment struct {
 	store map[string]Object
 	outer *Environment
 }
@@ -179,7 +179,6 @@ func (env *Environment) Get(id string) (Object, bool) {
 }
 
 func (env *Environment) Create(id string, obj Object) (Object, bool) {
-	// TODO: check for in which env does id exists and then update.
 	_, ok := env.Get(id)
 	if ok {
 		return nil, false
@@ -189,7 +188,6 @@ func (env *Environment) Create(id string, obj Object) (Object, bool) {
 }
 
 func (env *Environment) Update(id string, obj Object) (Object, bool) {
-	// TODO: check for in which env does id exists and then update.
 	_, ok := env.Get(id)
 	if !ok {
 		return nil, false
@@ -206,6 +204,5 @@ func NewEnvironment() *Environment {
 func ExtendEnv(outer *Environment) *Environment {
 	env := NewEnvironment()
 	env.outer = outer
-	// TODO: add error for same variable name in the two environments
 	return env
 }

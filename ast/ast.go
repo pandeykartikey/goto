@@ -318,7 +318,7 @@ func (il *IdentifierList) String() string {
 	return out.String()
 }
 
-type FuncStatement struct { // TODO: Add return type
+type FuncStatement struct {
 	Token         token.Token
 	Name          *Identifier
 	ParameterList *IdentifierList

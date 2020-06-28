@@ -2,4 +2,4 @@ func identity(x) {
 	return x;
 }
 
-identity(4); 
+print(identity(4)); 
