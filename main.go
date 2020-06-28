@@ -12,7 +12,7 @@ import (
 	"github.com/pandeykartikey/goto/repl"
 )
 
-var filename = flag.String("f", "main.to", "file to run")
+var filename = flag.String("f", "", "file to run")
 
 func main() {
 	flag.Parse()

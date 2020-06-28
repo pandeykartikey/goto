@@ -260,6 +260,14 @@ func TestErrorHandling(t *testing.T) {
 			"[1, 2, 3][-1]",
 			"List index out of range",
 		},
+		{
+			`len(1)`,
+			"argument to `len` not supported, got INTEGER",
+		},
+		{
+			`len("one", "two")`,
+			"wrong number of arguments. got=2, want=1",
+		},
 	}
 
 	for _, tt := range tests {
@@ -387,13 +395,13 @@ func TestList(t *testing.T) {
 	if len(result.Value) != 3 {
 		t.Fatalf("list has wrong num of elements. got=%d", len(result.Value))
 	}
-	if !testIntegerObject(t, *result.Value[0], 1) {
+	if !testIntegerObject(t, result.Value[0], 1) {
 		return
 	}
-	if !testIntegerObject(t, *result.Value[1], 4) {
+	if !testIntegerObject(t, result.Value[1], 4) {
 		return
 	}
-	if !testIntegerObject(t, *result.Value[2], 6) {
+	if !testIntegerObject(t, result.Value[2], 6) {
 		return
 	}
 }
@@ -408,8 +416,8 @@ func TestIndexExpressions(t *testing.T) {
 			1,
 		},
 		{
-			"[1, 2, 3][1]",
-			2,
+			`"abc"[1]`,
+			"b",
 		},
 		{
 			"[1, 2, 3][2]",
@@ -438,11 +446,34 @@ func TestIndexExpressions(t *testing.T) {
 	}
 	for _, tt := range tests {
 		out := evalInput(tt.input)
-		integ, ok := tt.exp.(int)
-		if ok {
-			testIntegerObject(t, out, int64(integ))
-		} else {
-			testNullObject(t, out)
+		switch tt.exp.(type) {
+		case int64:
+			testIntegerObject(t, out, tt.exp.(int64))
+		case string:
+			testStringObject(t, out, tt.exp.(string))
 		}
+	}
+}
+
+func TestBuiltinFunctions(t *testing.T) {
+	tests := []struct {
+		input string
+		exp   int64
+	}{
+		{`len("")`, 0},
+		{`len("four")`, 4},
+		{`len("hello world")`, 11},
+		{`len([1,2,3])`, 3},
+		{`
+			var a = [1,2,3];
+			append(a, 4);
+			a[3]
+		`,
+			4,
+		},
+	}
+	for _, tt := range tests {
+		out := evalInput(tt.input)
+		testIntegerObject(t, out, tt.exp)
 	}
 }

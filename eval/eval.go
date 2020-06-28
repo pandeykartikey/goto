@@ -15,6 +15,13 @@ var (
 	FALSE       = &object.Boolean{Value: false}
 )
 
+func environmentwithBuiltins(env *object.Environment) *object.Environment {
+	for key, val := range builtins {
+		env.Create(key, val)
+	}
+	return env
+}
+
 func nativeBoolToBooleanObject(input bool) object.Object {
 	if input {
 		return TRUE
@@ -206,7 +213,7 @@ func isTrue(obj object.Object) bool {
 }
 
 func evalExpressionList(exprList *ast.ExpressionList, env *object.Environment) object.Object {
-	var objList []*object.Object
+	var objList []object.Object
 
 	if exprList == nil {
 		return &object.List{Value: objList}
@@ -217,7 +224,7 @@ func evalExpressionList(exprList *ast.ExpressionList, env *object.Environment) o
 		if isError(obj) {
 			return obj
 		}
-		objList = append(objList, &obj)
+		objList = append(objList, obj)
 	}
 
 	return &object.List{Value: objList}
@@ -230,13 +237,25 @@ func evalArrayIndexExpression(list *object.List, idx int64) object.Object {
 		return errorMessageToObject("List index out of range")
 	}
 
-	return *list.Value[idx]
+	return list.Value[idx]
+}
+
+func evalStringIndexExpression(str *object.String, idx int64) object.Object {
+	max := int64(len(str.Value) - 1)
+
+	if idx < 0 || idx > max {
+		return errorMessageToObject("String index out of range")
+	}
+
+	return &object.String{Value: string(str.Value[idx])}
 }
 
 func evalIndexExpression(left, index object.Object) object.Object {
 	switch {
 	case left.Type() == object.LIST_OBJ && index.Type() == object.INTEGER_OBJ:
 		return evalArrayIndexExpression(left.(*object.List), index.(*object.Integer).Value)
+	case left.Type() == object.STRING_OBJ && index.Type() == object.INTEGER_OBJ:
+		return evalStringIndexExpression(left.(*object.String), index.(*object.Integer).Value)
 	default:
 		return errorMessageToObject("index operator not supported: %s", left.Type())
 	}
@@ -264,7 +283,7 @@ func evalAssignment(assignStmt *ast.Assignment, env *object.Environment) object.
 		switch assignStmt.TokenLiteral() {
 		case "var":
 			if valueList != nil {
-				if _, ok = env.Create(ident.Value, *valueList.Value[idx]); !ok {
+				if _, ok = env.Create(ident.Value, valueList.Value[idx]); !ok {
 					return errorMessageToObject("An identifier already exists with that name")
 				}
 			} else {
@@ -273,7 +292,7 @@ func evalAssignment(assignStmt *ast.Assignment, env *object.Environment) object.
 				}
 			}
 		case "=":
-			if _, ok = env.Update(ident.Value, *valueList.Value[idx]); !ok {
+			if _, ok = env.Update(ident.Value, valueList.Value[idx]); !ok {
 				return errorMessageToObject("An identifier does not exists with that name")
 			}
 		default:
@@ -359,7 +378,7 @@ func addArgumentsToEnvironment(fn *object.Function, objList *object.List, env *o
 	}
 
 	for idx, param := range fn.ParameterList.Identifiers {
-		extendedEnv.Create(param.Value, *objList.Value[idx])
+		extendedEnv.Create(param.Value, objList.Value[idx])
 	}
 
 	return extendedEnv
@@ -376,14 +395,18 @@ func evalCallExpression(name string, obj object.Object, env *object.Environment)
 		return errorMessageToObject("Function not found: %s", name)
 	}
 
-	fnObj, ok := fn.(*object.Function)
-	if !ok {
+	switch fn.(type) {
+	case *object.Function:
+		fnObj := fn.(*object.Function)
+		extendedEnv := addArgumentsToEnvironment(fnObj, args, env)
+
+		return evalStatements(fnObj.FuncBody.Statements, extendedEnv, true)
+
+	case *object.Builtin:
+		return fn.(*object.Builtin).Fn(args.Value...)
+	default:
 		return errorMessageToObject("Function not found: %s", name)
 	}
-
-	extendedEnv := addArgumentsToEnvironment(fnObj, args, env)
-
-	return evalStatements(fnObj.FuncBody.Statements, extendedEnv, true)
 }
 
 func evalProgram(node ast.Node, env *object.Environment) object.Object {
@@ -463,6 +486,7 @@ func evalProgram(node ast.Node, env *object.Environment) object.Object {
 }
 
 func Eval(node ast.Node, env *object.Environment) object.Object {
+	env = environmentwithBuiltins(env)
 	out := evalProgram(node, env)
 	switch out.(type) {
 	case *object.ReturnValue:

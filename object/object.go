@@ -8,6 +8,7 @@ import (
 )
 
 type Type string
+type BuiltinFunction func(args ...Object) Object
 
 const (
 	INTEGER_OBJ      = "INTEGER"
@@ -19,6 +20,7 @@ const (
 	FUNCTION_OBJ     = "FUNCTION"
 	LIST_OBJ         = "LIST"
 	STRING_OBJ       = "STRING"
+	BUILTIN_OBJ      = "BUILTIN"
 )
 
 type Object interface {
@@ -116,7 +118,7 @@ func (f *Function) Inspect() string {
 }
 
 type List struct {
-	Value []*Object
+	Value []Object
 }
 
 func (l *List) Type() Type {
@@ -131,12 +133,24 @@ func (l *List) Inspect() string {
 		if idx > 0 {
 			out.WriteString(", ")
 		}
-		out.WriteString((*param).Inspect())
+		out.WriteString(param.Inspect())
 	}
 
 	out.WriteString("]")
 
 	return out.String()
+}
+
+type Builtin struct {
+	Fn BuiltinFunction
+}
+
+func (b *Builtin) Type() Type {
+	return BUILTIN_OBJ
+}
+
+func (b *Builtin) Inspect() string {
+	return "builtin function"
 }
 
 type Error struct {
