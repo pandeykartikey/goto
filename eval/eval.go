@@ -373,10 +373,6 @@ func evalFuncStatement(funcStmt *ast.FuncStatement, env *object.Environment) obj
 func addArgumentsToEnvironment(fn *object.Function, objList *object.List, env *object.Environment) *object.Environment {
 	extendedEnv := object.ExtendEnv(env)
 
-	if fn.ParameterList == nil {
-		return extendedEnv
-	}
-
 	for idx, param := range fn.ParameterList.Identifiers {
 		extendedEnv.Create(param.Value, objList.Value[idx])
 	}
@@ -398,7 +394,20 @@ func evalCallExpression(name string, obj object.Object, env *object.Environment)
 	switch fn.(type) {
 	case *object.Function:
 		fnObj := fn.(*object.Function)
-		extendedEnv := addArgumentsToEnvironment(fnObj, args, env)
+		var extendedEnv *object.Environment
+		if fnObj.ParameterList != nil {
+			if len(fnObj.ParameterList.Identifiers) == len(args.Value) {
+				extendedEnv = addArgumentsToEnvironment(fnObj, args, env)
+			} else {
+				return errorMessageToObject("Number of arguments passed donot match %s's number of parameters", name)
+			}
+		} else {
+			if len(args.Value) == 0 {
+				extendedEnv = env
+			} else {
+				return errorMessageToObject("Number of arguments passed donot match %s's number of parameters", name)
+			}
+		}
 
 		return evalStatements(fnObj.FuncBody.Statements, extendedEnv, true)
 

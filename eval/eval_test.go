@@ -351,6 +351,7 @@ func TestFunctionCall(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
+
 		out := evalInput(tt.input)
 		testIntegerObject(t, out, tt.exp)
 	}

@@ -580,6 +580,8 @@ func (p *Parser) parseStatement() ast.Statement {
 	case token.ILLEGAL:
 		p.errors = append(p.errors, "ILLEGAL Token encountered")
 		return nil
+	case token.SEMI:
+		return nil
 	case token.IDENT:
 		if p.peekTokenIs(token.COMMA) || p.peekTokenIs(token.ASSIGN) {
 			return p.parseAssignment(false)

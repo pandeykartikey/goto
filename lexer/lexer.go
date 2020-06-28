@@ -72,7 +72,7 @@ func (l *Lexer) NextToken() token.Token {
 		return tok
 	} else {
 		if isLetter(l.ch) {
-			tok.Literal = l.readSequence(isLetter)
+			tok.Literal = l.readSequence(isAlphanumeric)
 			tok.Type = token.LookupGroup(tok.Literal, token.Keywords, token.IDENT)
 			return tok
 		} else if isDigit(l.ch) {
@@ -93,7 +93,11 @@ func newToken(Type token.Type, ch byte) token.Token {
 }
 
 func isLetter(ch byte) bool {
-	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
+	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z'
+}
+
+func isAlphanumeric(ch byte) bool {
+	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_' || '0' <= ch && ch <= '9'
 }
 
 func isDigit(ch byte) bool {

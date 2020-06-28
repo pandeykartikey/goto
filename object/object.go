@@ -179,7 +179,7 @@ func (env *Environment) Get(id string) (Object, bool) {
 }
 
 func (env *Environment) Create(id string, obj Object) (Object, bool) {
-	_, ok := env.Get(id)
+	_, ok := env.store[id]
 	if ok {
 		return nil, false
 	}
