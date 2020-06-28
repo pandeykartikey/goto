@@ -3,7 +3,7 @@ package ast
 import (
 	"strings"
 
-	"goto/token"
+	"github.com/pandeykartikey/goto/token"
 )
 
 type Node interface {

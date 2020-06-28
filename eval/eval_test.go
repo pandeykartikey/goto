@@ -3,9 +3,9 @@ package eval
 import (
 	"testing"
 
-	"goto/lexer"
-	"goto/object"
-	"goto/parser"
+	"github.com/pandeykartikey/goto/lexer"
+	"github.com/pandeykartikey/goto/object"
+	"github.com/pandeykartikey/goto/parser"
 )
 
 func evalInput(inp string) object.Object {

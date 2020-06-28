@@ -2,8 +2,9 @@ package object
 
 import (
 	"fmt"
-	"goto/ast"
 	"strings"
+
+	"github.com/pandeykartikey/goto/ast"
 )
 
 type Type string

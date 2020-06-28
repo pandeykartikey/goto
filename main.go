@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"goto/eval"
-	"goto/lexer"
-	"goto/object"
-	"goto/parser"
-	"goto/repl"
+	"github.com/pandeykartikey/goto/eval"
+	"github.com/pandeykartikey/goto/lexer"
+	"github.com/pandeykartikey/goto/object"
+	"github.com/pandeykartikey/goto/parser"
+	"github.com/pandeykartikey/goto/repl"
 )
 
 var filename = flag.String("f", "main.to", "file to run")

@@ -1,7 +1,7 @@
 package lexer
 
 import (
-	"goto/token"
+	"github.com/pandeykartikey/goto/token"
 )
 
 type Lexer struct {

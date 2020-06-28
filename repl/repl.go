@@ -5,10 +5,10 @@ import (
 
 	"github.com/peterh/liner"
 
-	"goto/eval"
-	"goto/lexer"
-	"goto/object"
-	"goto/parser"
+	"github.com/pandeykartikey/goto/eval"
+	"github.com/pandeykartikey/goto/lexer"
+	"github.com/pandeykartikey/goto/object"
+	"github.com/pandeykartikey/goto/parser"
 )
 
 const (

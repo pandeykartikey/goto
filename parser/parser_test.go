@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"goto/ast"
-	"goto/lexer"
+	"github.com/pandeykartikey/goto/ast"
+	"github.com/pandeykartikey/goto/lexer"
 )
 
 func parseInput(t *testing.T, input string, n int) *ast.Program {

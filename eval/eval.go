@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"math"
 
-	"goto/ast"
-	"goto/object"
+	"github.com/pandeykartikey/goto/ast"
+	"github.com/pandeykartikey/goto/object"
 )
 
 var (

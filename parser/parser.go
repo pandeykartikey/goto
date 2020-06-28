@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"goto/ast"
-	"goto/lexer"
-	"goto/token"
+	"github.com/pandeykartikey/goto/ast"
+	"github.com/pandeykartikey/goto/lexer"
+	"github.com/pandeykartikey/goto/token"
 )
 
 const ( // These represent the operator precedence values.
