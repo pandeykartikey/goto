@@ -53,10 +53,7 @@ Goto is a dynamically typed programming language written to support all the scri
 ### Source Installation
 To install `goto`, run the following command:   
 
-    git clone git@github.com:pandeykartikey/goto.git
-    cd goto
-    go install
-
+    go get -u github.com/pandeykartikey/goto
 
 ### Binary Releases
 
