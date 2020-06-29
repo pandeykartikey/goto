@@ -53,7 +53,7 @@ Goto is a dynamically typed programming language written to support all the scri
 ### Source Installation
 To install `goto`, run the following command:   
 
-    git clone https://github.com/pandeykartikey/goto
+    git clone git@github.com:pandeykartikey/goto.git
     cd goto
     go install
 
@@ -201,16 +201,15 @@ Single Line comments are supported by goto.
     # This is a comment
 
 ## 6. Contributing
-If you spot anything that seems wrong, please do [report an issue](https://github.com/pandeykartikey/goto/issues).
+If you spot anything that seems wrong, please do [report an issue](https://github.com/pandeykartikey/goto/issues/new).
 
-If you feel something is missing in goto, consider creating an [issue](https://github.com/pandeykartikey/goto/issues) or submitting a [pull request](https://github.com/pandeykartikey/goto/pulls).
+If you feel something is missing in goto, consider creating an [issue](https://github.com/pandeykartikey/goto/issues/new) or submitting a [pull request](https://github.com/pandeykartikey/goto/pulls).
 
 ## 7. Acknowledgments
-This programming language takes inspiration from the Book [Write an Interpreter in Go](https://interpreterbook.com).
+This programming language takes inspiration from the book [Write an Interpreter in Go](https://interpreterbook.com).
 
 ## 8. License
 Goto is licensed under [MIT License](https://github.com/pandeykartikey/goto/blob/master/LICENSE.md).
 
 ## 9. Contact
-If you have any queries regarding the project or just want to say hello, feel free to drop a mail at
- pandeykartikey99@gmail.com.
+If you have any queries regarding the project or just want to say hello, feel free to drop a mail at pandeykartikey99@gmail.com.
