@@ -1,5 +1,7 @@
-func identity(x) {
+#!/usr/bin/env goto
+
+func identity(x) { # An identity function
 	return x;
 }
 
-print(identity(4)); 
+print(identity(4));

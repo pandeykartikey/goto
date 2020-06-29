@@ -36,6 +36,14 @@ func (l *Lexer) skipWhitespace() {
 	}
 }
 
+func (l *Lexer) skipComments() {
+	if l.ch == '#' {
+		for l.ch != '\n' && l.ch != 0 {
+			l.readChar()
+		}
+	}
+}
+
 func (l *Lexer) readSequence(f func(byte) bool) string {
 	position := l.position
 
@@ -79,6 +87,9 @@ func (l *Lexer) NextToken() token.Token {
 			tok.Literal = l.readSequence(isDigit)
 			tok.Type = token.INT
 			return tok
+		} else if l.ch == '#' {
+			l.skipComments()
+			return l.NextToken()
 		} else {
 			tok = newToken(token.ILLEGAL, l.ch)
 		}

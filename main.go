@@ -41,8 +41,7 @@ func main() {
 			fmt.Println(result.Inspect())
 		}
 	} else {
-		fmt.Printf("GoTo 0.1.0\n")
-
+		fmt.Println("Goto 0.1.0")
 		repl.Start()
 	}
 }

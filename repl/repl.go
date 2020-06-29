@@ -20,6 +20,7 @@ func Start() {
 
 	term := liner.NewLiner()
 	defer term.Close()
+	term.SetCtrlCAborts(true)
 
 	env := object.NewEnvironment()
 	code := ""
@@ -30,11 +31,21 @@ func Start() {
 		line, err := term.Prompt(prompt)
 
 		if err != nil {
-			fmt.Println("Aborted")
+			if err == liner.ErrPromptAborted {
+				code = ""
+				prompt = PS1
+				continue
+			} else {
+				fmt.Println("Aborted")
+			}
 			break
 		}
 
-		code += line
+		if line == "exit" {
+			break
+		}
+
+		code += "\n" + line
 
 		l := lexer.New(code)
 		p := parser.New(l)

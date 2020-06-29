@@ -18,6 +18,7 @@ Goto is a dynamically typed programming language written to support all the scri
 - Grouped Expressions
 - Functions
 - Scopes
+- Comments
 - Error Handling
 - Built in Functions: `append`, `print`, `len`
 
@@ -66,7 +67,12 @@ To execute a goto-script, pass the name to the interpreter:
 
     $ goto sample.to
 
-To drop into goto-repl, type `goto`. 
+Scripts can be made executable by adding a suitable shebang line:
+
+    #!/usr/bin/env goto
+
+
+To drop into goto-repl, type `goto`. To exit from repl, just type `exit` or `Ctrl + D`.
 
 ## 5. Syntax
 
@@ -92,8 +98,8 @@ The datatypes of all the variables need not be the same.
 Goto supports hiding of global variable in block constructs
 
     var a = 4;
-    if true { var a = 5; print(a);} //prints 5
-    print(a); //prints 4
+    if true { var a = 5; print(a);} # prints 5
+    print(a); # prints 4
 
 
 ### 5.2 Arithmetic operations
@@ -111,19 +117,19 @@ List is a data structure that organizes items by linear sequence. It can hold mu
 Lists are 0-indexed. Elements can be accessed using []. Similar indexing exists for strings.
 
     var a = [1, true, "array"];
-    a[1] // returns true
-    a[2][3] // returns "a"
+    a[1] # returns true
+    a[2][3] # returns "a"
 
 ### 5.4 Builtin functions
 Goto currently supports 3 built-in functions:
 1. `len`: Returns the length of string or a list.
 
-    len("goto") //returns 4
+    len("goto") # returns 4
 
 2. `append`: appends a token at the end of an array
 
     var a = [1, 2];
-    append(a, 3) // a becomes [1, 2, 3]
+    append(a, 3) # a becomes [1, 2, 3]
 
 3. `print`: prints the content of parameters to STDOUT. It can take multiple arguments.
 
@@ -143,7 +149,7 @@ Goto defines function using `func` followed by an identifier and a parameter lis
 You can define local functions inside a block statement with limited scope.
 
     func addTwo(x) {
-      func addOne(x) { // addOne() is limited to addTwo()'s scope
+      func addOne(x) { # addOne() is limited to addTwo()'s scope
         return x + 1;
       }
       x = addOne(x);
@@ -163,7 +169,7 @@ Goto supports if-else-if statements.
     } else {
       c = 30; 
     }
-    print(c); //returns 20
+    print(c); # returns 20
 
 ### 5.7 For-loop statements
 Goto has supports for-loop statements.
@@ -189,6 +195,10 @@ There are three control flow statements in goto:
 
 3. `return`: It is used to terminate a function. It may also be used to return values from functions.  
 
+### 5.9 Comments
+Single Line comments are supported by goto.
+
+    # This is a comment
 
 ## 6. Contributing
 If you spot anything that seems wrong, please do [report an issue](https://github.com/pandeykartikey/goto/issues).

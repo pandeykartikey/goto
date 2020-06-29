@@ -253,6 +253,10 @@ func (p *Parser) parseExpressionList() *ast.ExpressionList {
 		return args
 	}
 
+	if p.currTokenIs(token.EOF) {
+		p.errors = append(p.errors, "End Of File encountered while parsing")
+	}
+
 	return nil
 }
 
@@ -337,7 +341,7 @@ func (p *Parser) parseAssignment(isExpression bool) *ast.Assignment {
 
 	assign.ValueList = p.parseExpressionList()
 
-	if len(assign.ValueList.Expressions) != len(assign.NameList.Identifiers) {
+	if assign.ValueList == nil || assign.NameList == nil || len(assign.ValueList.Expressions) != len(assign.NameList.Identifiers) {
 		p.errors = append(p.errors, "Mismatch in number of values on both side of =")
 	}
 
@@ -581,6 +585,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		p.errors = append(p.errors, "ILLEGAL Token encountered")
 		return nil
 	case token.SEMI:
+		return nil
+	case token.EOF:
 		return nil
 	case token.IDENT:
 		if p.peekTokenIs(token.COMMA) || p.peekTokenIs(token.ASSIGN) {
